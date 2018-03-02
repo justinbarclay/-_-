@@ -1,16 +1,16 @@
-* My descent into madness:  A dev diary on how I learned to hack Emacs
+* My descent into madness: Hacking Emacs to send text to Slack
 
-I'm looking to outline the process of how I hacked emacs-slack to allow me to send snippets of text from any buffer in Emacs to Slack.
+An Emacs hack to send text to Slack. This is post outlines my thought process as I learn to hack Emacs.
 
 ** Why?
-Why do you use Emacs? Mostly because I like to break things and it is very easy for me to break my Emacs set-up.
+Why do you use Emacs? Mostly because I like to break things, and it is very easy for me to break my Emacs set-up.
 
-No, why use Slack inside of Emacs? I like my Slack like I like my Emacs, brittle and glued together with arcane magic I don't understand. There is another benefit of using Slack in Emacs, it takes up fewer resources!
+/No, why use Slack inside of Emacs?/ I like my Slack like I like my Emacs: brittle and glued together with arcane magic I don't understand. There is another benefit of using Slack in Emacs, it takes up fewer resources!
 
-But why do you need custom functions for Slack? Because, I am a developer and I like to share things, and I am lazy too lazy to copy and paste every time I want to share an idea or have a question about a line of code. So instead of relying on copy and pasting, I spent several nights reading someone else's code figuring out how to make sharing code to my team with Emacs and Slack easier.
+/But why do you need custom functions for Slack?/ Because, I am a developer and I like to share things, and I am lazy -- too lazy to copy and paste every time I want to share an idea or have a question about a line of code. So instead of relying on copying and pasting, I spent several nights reading someone else's code, figuring out how to make sharing code to my team with Emacs and Slack easier.
 
 ** TLDR
-Copy, paste, and run the code below to send a region to Slack
+Install [[https://github.com/yuya373/emacs-slack][emacs-slack]], and paste the code below to be able to send a snipper of code to Slack
 #+BEGIN_SRC emacs-lisp
   (defun jb/send-region-to-slack-code ()
     (interactive)
@@ -19,7 +19,7 @@ Copy, paste, and run the code below to send a region to Slack
                  (cl-loop for team in (list team)
                           for channels = (oref team channels)
                           nconc channels)))) ;; Get all rooms from selected team
-      (slack-message-send-internal (concat "```"(filter-buffer-substring (region-beginning) (region-end)) "```")
+      (slack-message-send-internal (concat "```" (filter-buffer-substring (region-beginning) (region-end)) "```")
                                    (oref room id)
                                    team)))
 #+END_SRC
@@ -28,7 +28,7 @@ If you wish to follow along, you will need to install and set-up emacs-slack
 *** Install
 Let's install [[https://github.com/yuya373/emacs-slack][emacs-slack]]!
 
-If you use use-package as your Emacs package manager, Yuya373 has some code in the emacs-slack repo that you can just copy and paste into your init file.
+If you use use-package as your Emacs package manager, Yuya373 has some code in the emacs-slack repo that you can just [[https://github.com/yuya373/emacs-slack#configure][copy and paste]] into your init file.
 
 If you don't use use-package, you could use [[https://github.com/emacscollective/borg][borg]] to assimilate the package into your Emacs.
 
@@ -38,9 +38,9 @@ If you don't have any of these, a nice simple ~M-x package-install emacs-slack~ 
 *** Setup
 To setup emacs-slack, just follow the helpful steps found on the [[https://github.com/yuya373/emacs-slack#how-to-get-token-the-harder-yet-officially-sanctioned-way][GitHub]] page
 *** Play
- If you've never heard of emacs-slack before, this will probably be enough for you. You have Emacs-Slack setup and running, play with it. Live it. Love it. Forget about this post.
+ If you've never heard of emacs-slack before, this will probably be enough for you. You have emacs-slack setup and running. Play with it. Live it. Love it. Forget about this post.
 ** Let's Dive In
-Enough set-up, I have an idea and I want to get it working. I have setup emacs-slack and it's now running running. My first step into hacking emacs-slack is to open up some of the files for the package and see what I can divine.
+Enough about you, I have an idea and I want to get it working. I have setup emacs-slack and it's now running. My first step into hacking emacs-slack is to open up some of the files for the package and see what I can divine.
 *** Slack.el
 [[https://github.com/yuya373/emacs-slack/blob/master/slack.el][slack.el]] seems like a good place to start.
 Let's see, there are a couple of [[https://www.gnu.org/software/emacs/manual/html_node/eintr/defcustom.html][defcustoms]], some defuns and cl-defuns[fn:1]... but nothing that looks like it has to do with sending messages, which is ultimately what I want to do.
@@ -49,11 +49,11 @@ Time to move on...
 *** Slack-message.el
 I want to send a message, maybe [[https://github.com/yuya373/emacs-slack/blob/master/slack-message.el][slack-message.el]] is a better place to start..
 
-Ok... wait what? defclass? defmethod? Since when was Lisp Object Oriented?[fn:2]
+Ok... wait what? defclass? defmethod? Since when was Lisp object oriented?[fn:2]
 
 So, it looks like Message is an object with a lot of methods... helpful, but doesn't get me anything yet.
 *** I give up
-I've read through two files, I've learned somethings about the structure of this package, but there are 50 .el files in this package. If I keep looking through all of these files, it's going to be a lot of work, maybe I can take a different approach.
+I've read through two files, I've learned some things about the structure of this package, but there are 50 .el files in this package. If I keep looking through all of these files, it's going to be a lot of work! Maybe I can take a different approach.
 ** Dive Deeper
 
 [[./images/power_of_grayskull.jpg]]
