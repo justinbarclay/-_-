@@ -1,0 +1,5 @@
+* Outline
+** Let's clean this up
+*** make it more generic, not just channels, but any type of room!
+*** Markdown that markup!
+*** DRY IT UP!

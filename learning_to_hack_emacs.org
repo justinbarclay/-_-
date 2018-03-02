@@ -1,0 +1,269 @@
+* My descent into madness:  A dev diary on how I learned to hack Emacs
+
+I'm looking to outline the process of how I hacked emacs-slack to allow me to send snippets of text from any buffer in Emacs to Slack.
+
+** Why?
+Why do you use Emacs? Mostly because I like to break things and it is very easy for me to break my Emacs set-up.
+
+No, why use Slack inside of Emacs? I like my Slack like I like my Emacs, brittle and glued together with arcane magic I don't understand. There is another benefit of using Slack in Emacs, it takes up fewer resources!
+
+But why do you need custom functions for Slack? Because, I am a developer and I like to share things, and I am lazy too lazy to copy and paste every time I want to share an idea or have a question about a line of code. So instead of relying on copy and pasting, I spent several nights reading someone else's code figuring out how to make sharing code to my team with Emacs and Slack easier.
+
+** TLDR
+Copy, paste, and run the code below to send a region to Slack
+#+BEGIN_SRC emacs-lisp
+  (defun jb/send-region-to-slack-code ()
+    (interactive)
+    (let ((team (slack-team-select)) ;; Select team
+          (room (slack-room-select
+                 (cl-loop for team in (list team)
+                          for channels = (oref team channels)
+                          nconc channels)))) ;; Get all rooms from selected team
+      (slack-message-send-internal (concat "```"(filter-buffer-substring (region-beginning) (region-end)) "```")
+                                   (oref room id)
+                                   team)))
+#+END_SRC
+** Let's play!
+If you wish to follow along, you will need to install and set-up emacs-slack
+*** Install
+Let's install [[https://github.com/yuya373/emacs-slack][emacs-slack]]!
+
+If you use use-package as your Emacs package manager, Yuya373 has some code in the emacs-slack repo that you can just copy and paste into your init file.
+
+If you don't use use-package, you could use [[https://github.com/emacscollective/borg][borg]] to assimilate the package into your Emacs.
+
+If you don't use borg, you could use [[https://github.com/dimitri/el-get][el-get]] to install the packages for you.
+
+If you don't have any of these, a nice simple ~M-x package-install emacs-slack~ works wonders.
+*** Setup
+To setup emacs-slack, just follow the helpful steps found on the [[https://github.com/yuya373/emacs-slack#how-to-get-token-the-harder-yet-officially-sanctioned-way][GitHub]] page
+*** Play
+ If you've never heard of emacs-slack before, this will probably be enough for you. You have Emacs-Slack setup and running, play with it. Live it. Love it. Forget about this post.
+** Let's Dive In
+Enough set-up, I have an idea and I want to get it working. I have setup emacs-slack and it's now running running. My first step into hacking emacs-slack is to open up some of the files for the package and see what I can divine.
+*** Slack.el
+[[https://github.com/yuya373/emacs-slack/blob/master/slack.el][slack.el]] seems like a good place to start.
+Let's see, there are a couple of [[https://www.gnu.org/software/emacs/manual/html_node/eintr/defcustom.html][defcustoms]], some defuns and cl-defuns[fn:1]... but nothing that looks like it has to do with sending messages, which is ultimately what I want to do.
+
+Time to move on...
+*** Slack-message.el
+I want to send a message, maybe [[https://github.com/yuya373/emacs-slack/blob/master/slack-message.el][slack-message.el]] is a better place to start..
+
+Ok... wait what? defclass? defmethod? Since when was Lisp Object Oriented?[fn:2]
+
+So, it looks like Message is an object with a lot of methods... helpful, but doesn't get me anything yet.
+*** I give up
+I've read through two files, I've learned somethings about the structure of this package, but there are 50 .el files in this package. If I keep looking through all of these files, it's going to be a lot of work, maybe I can take a different approach.
+** Dive Deeper
+
+[[./images/power_of_grayskull.jpg]]
+
+Through the power of the profiler, I shall not be defeated!
+
+*** Hey Baby! I like your profile
+I know of two alternatives to learn how code works in Emacs besides reading source code. The first is the profiler built right into [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Profiling.html][Emacs]]. The second is the built in Elisp debugger, [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Edebug.html#Edebug][Edebug]]. For now, I'm going to start with the easier approach.
+
+~M-x profiler-start~ will track CPU, Mem, or a combination of the two. My first thought is to send a few messages in Slack and see what pops up in the profiler. Hopefully, that will point me in the right direction and I'll find the magical invocations I need to recite to get my idea to work.
+
+*** Where I peek behind the veil
+If we look at the top level of the profile trace found in CPU, only two calls look like they are worth investigating: `command-execute` and `...`.
+**** CPU
+#+BEGIN_SRC
++ command-execute                                           6,487,771  67%
++ redisplay_internal (C function)                           2,024,379  21%
++ lui-scroll-post-command                                     938,936   9%
++ #<compiled 0x4da9630d>                                       65,239   0%
++ emojify-update-visible-emojis-background-after-command        30,616   0%
++ company-post-command                                         10,384   0%
++ request--curl-callback                                        9,980   0%
++ ...                                                           8,248   0%
++ timer-event-handler                                           4,864   0%
++ undo-auto--add-boundary                                       1,056   0%
++ sp--save-pre-command-state                                    1,056   0%
++ global-hl-line-highlight                                        720   0%
+#+END_SRC
+*** Command-execute
+If we expand `command-execute` I start to see some interesting calls...
+**** Enhance
+
+#+BEGIN_SRC
+- command-execute                                           6,487,771  67%
+ - call-interactively                                       6,487,771  67%
+  - apply                                                   6,487,771  67%
+   - call-interactively@ido-cr+-record-current-command      6,094,331  63%
+    - apply                                                 6,094,331  63%
+     - #<subr call-interactively>                           6,094,331  63%
+      - funcall-interactively                               6,094,331  63%
+       + profiler-report                                    6,042,814  63%
+       - lui-send-input                                        48,429   0%
+        - slack-message--send                                  48,429   0%
+         - let*                                                48,429   0%
+          - if                                                 48,429   0%
+           - let*                                              48,429   0%
+            - if                                               48,429   0%
+             - slack-buffer-send-message                       48,429   0%
+              - apply                                          43,237   0%
+               - #<compiled 0x4f23dd71>                        43,237   0%
+                - apply                                        43,237   0%
+                 - #<compiled 0x4db1669d>                      43,237   0%
+                  - apply                                      43,237   0%
+                   - #<lambda 0xdafed4764d8>                   43,237   0%
+                    - let*                                     43,237   0%
+                     - slack-message-send-internal             43,237   0%
+                      - let*                                   43,237   0%
+                       - let*                                  43,237   0%
+                        + slack-ws-send                        14,036   0%
+                        + json-encode                          12,561   0%
+                        + list                                 10,352   0%
+                        + slack-message-create                  6,288   0%
+#+END_SRC
+
+~slack-message--send~ and ~slack-message-send-internal~ seem to be the most promising, so let's look at these.
+
+It looks like ~slack-message--send~ checks to see if the current buffer is a "Slack Buffer", looks for "Slack Commands" to execture in the buffer, and then finally passes the message onto another function ~slack-buffer-send-message~. Unfortunately, this seems to rely too much on the internal state of the package, so I move onto the next function and hope it's simpler.
+
+#+BEGIN_SRC emacs-lisp
+  (defun slack-message--send (message)
+    (slack-if-let* ((buf slack-current-buffer))
+        (slack-if-let* ((command (slack-slash-commands-parse message)))
+            (slack-buffer-execute-slash-command buf command)
+          (slack-buffer-send-message buf message))))
+#+END_SRC
+
+Next up on my list is ~slack-message-send-internal~, this immediately looks a lot more promising it takes exactly the data I would expect: a message, a room id, and a team. Then, it composes the data into a keyed list and sends a JSON encoded object through a WebSocket. Jackpot!
+
+#+BEGIN_SRC emacs-lisp
+  (defun slack-message-send-internal (message channel-id team)
+    (slack-message-inc-id team)
+    (with-slots (message-id sent-message self-id) team
+      (let* ((m (list :id message-id
+                      :channel channel-id
+                      :type "message"
+                      :user self-id
+                      :text (slack-message-prepare-links
+                             (slack-escape-message message)
+                             team)))
+             (json (json-encode m))
+             (obj (slack-message-create m team)))
+        (slack-ws-send json team)
+        (puthash message-id obj sent-message))))
+#+END_SRC
+
+Now onto my next problem...
+
+*** I've got 99 problems
+The Emacs profiler is nice to see what is being called, but how do I see what the data structures look like? I mean I need to know what they look like to insert them in the ~send-message-send-internal~, right?
+
+[[https://www.gnu.org/software/emacs/manual/html_node/elisp/Edebug.html#Edebug][Edebug]] to the rescue! If you have any intention of writing elisp, I recommend you read this section of the Emacs Manual. I've only recently discovered Edebug, but it has quickly become an invaluable tool when I explore code.
+
+**** Tracing through slack-message--send
+
+I know what function I want to inspect, slack-message-send-internal, but I'm also curious how does data transform and build up as it's moving through this system? To answer that question we need to start inspecting earlier in the call chain. We've all ready taken a quick look at slack-send--message, so let's add a [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Source-Breakpoints.html#Source-Breakpoints][source breakpoint]], and [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Instrumenting.html#Instrumenting][instrument]] the function.
+
+#+BEGIN_SRC emacs-lisp
+  (defun slack-message--send (message)
+    (edebug)
+    (slack-if-let* ((buf slack-current-buffer))
+        (slack-if-let* ((command (slack-slash-commands-parse message)))
+            (slack-buffer-execute-slash-command buf command)
+          (slack-buffer-send-message buf message))))
+#+END_SRC
+
+I've added a breakpoint into the function ~(edebug)~, now we just need to instrument the function. An easy way to instrument functions is to move my cursor to the beggining of the function definition and call ~M-x edebug-eval-top-level-form~, this evaluates the current function and instruments it so Edebug can perform its magic.
+
+After tracing through the functions I see that message, channel-id, and team have the following structure:
+
+| message    | #("Hello World" 0 4 (fontified t ws-butler-chg chg)) |
+| channel-id | "D884GPDM0"                                   |
+| team       | #23=#<slack-team slack-team-454a4604>         |
+
+What it looks like is message can be any real string, but I still need to find out ways to select the team and channel I want to post to.
+*** (defun slack-channel-select ())
+Luckily, I have a good idea of where to look to find out how to gather this information. Every time I want to enter a Slack channel I run the command ~M-x slack-channel-select~, so let's take a look at that.
+
+#+BEGIN_SRC emacs-lisp
+(defun slack-channel-select ()
+  (interactive)
+  (let* ((team (slack-team-select))
+         (room (slack-room-select
+                (cl-loop for team in (list team)
+                         for channels = (oref team channels)
+                         nconc channels))))
+    (slack-room-display room team)))
+#+END_SRC
+
+That looks perfect, I can copy and paste 90% of this code into my own function and we'll have something close to working.
+
+*** My first success, "Hello World"
+
+My first test was to see if I could quickly modify this function to get a prototype working.
+
+#+BEGIN_SRC emacs-lisp
+  (defun jb/say-hello-to-slack ()
+    (interactive)
+    (let* ((team (slack-team-select))
+           (room (slack-room-select
+                  (cl-loop for team in (list team)
+                           for channels = (oref team channels)
+                           nconc channels))))
+      (slack-message-send-internal "Hello World"
+                                   (oref room id)
+                                   team)))
+#+END_SRC
+
+Now to test it!
+
+[[./images/HelloWorld.mp4][Example of the above function working]]
+
+Works beautifully!
+*** Learning about Regions, Buffers and everything between
+
+Now my last problem I need to solve, I need to figure out how to copy a region of text. I'm not sure how to do that but I do know of a great resource for when trying to learn elisp, Emac's own [[https://www.gnu.org/software/emacs/manual/html_node/elisp/][Elisp Manual]][fn:4]. The keys parts that we need to be aware of from the elisp manual are [[https://www.gnu.org/software/emacs/manual/html_node/elisp/The-Region.html#The-Region][Regions]] and [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Buffer-Contents.html#Buffer-Contents][Buffer Contents.]]
+
+As an example of how I learned to programmatically access text in a region, I've outlined a simple function below that prints out the content of a selected region to the minibuffer.
+#+BEGIN_SRC emacs-lisp
+  (defun jb/echo-region ()
+    (interactive)
+    (message (filter-buffer-substring (region-beginning) (region-end))))
+#+END_SRC
+
+This finally leads me to have all the tools to create a function where I can post from any buffer into slack
+
+#+BEGIN_SRC emacs-lisp
+  (defun jb/send-region-to-slack ()
+    (interactive)
+    (let ((team (slack-team-select)) ;; Select team
+          (room (slack-room-select
+                 (cl-loop for team in (list team)
+                          for channels = (oref team channels)
+                          nconc channels)))) ;; Get all rooms from selected team
+      (slack-message-send-internal (filter-buffer-substring (region-beginning) (region-end))
+                                   (oref room id)
+                                   team)))
+#+END_SRC
+
+*** Where I make my text prettier
+
+I have one last enhancement to my function that I want to make: I am almost always going to be sending some chunk of code to Slack, so I want to wrap it in three backticks so Slack will apply the proper markup to it.
+
+#+BEGIN_SRC emacs-lisp
+  (defun jb/send-region-to-slack-code ()
+    (interactive)
+    (let ((team (slack-team-select)) ;; Select team
+          (room (slack-room-select
+                 (cl-loop for team in (list team)
+                          for channels = (oref team channels)
+                          nconc channels)))) ;; Get all rooms from selected team
+      (slack-message-send-internal (concat "```"(filter-buffer-substring (region-beginning) (region-end)) "```")
+                                   (oref room id)
+                                   team)))
+#+END_SRC
+
+** Footnotes
+[fn:1] As I was reading through the slack code I found it interesting that Emacs' defun was different from a CL implementation of defun. Richard Stalman hated how you could use keys to destructure arguments in Common Lisp and chose to omit that feature in elisp. https://www.emacswiki.org/emacs/KeywordArguments
+
+[fn:2] Fun note, Emacs Lisp has had an object system, "[[https://www.gnu.org/software/emacs/manual/html_node/eieio/][Enhanced Implementation of Emacs Interpreted Objects]]", since at least 2007 and maybe earlier[fn:3].
+
+[fn:3] EIEIO is actually inspired by [[https://en.wikipedia.org/wiki/Common_Lisp_Object_System][Common Lisp Object System]], doing this dive into Emacs-Slack is teaching me so much about Emacs and Common Lisp!
+
+[fn:4] This is a lie, I did not know about this manual until I started writing this dev diary. This would have saved me hours of very poor google-fu.

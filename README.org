@@ -1,0 +1,3 @@
+* Why?
+** ¯\_(ツ)_/¯
+This is meant to be a diary my frustrations with programming: how I learn to solve problems, code solutions, and make more problems.
