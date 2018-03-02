@@ -1,6 +1,6 @@
 * My descent into madness: Hacking Emacs to send text to Slack
 
-I want to get Emacs to send snippets of text from any buffer to Slack. Luckily, there is a Slack client for Emacs, called [[https://github.com/yuya373/emacs-slack][emacs-slack]]. So, most of the hard work is done for me, all I need to do now is to learn how to bend the package to my will.
+I want to get Emacs to send snippets of text from any buffer to Slack. Luckily, there is a Slack client for Emacs, called [[https://github.com/yuya373/emacs-slack][emacs-slack]]. So, most of the hard work is done for me, I have an interface to Slack in Emacs that allows me to send and read messages to any channel, rooms or person. Unfortunately, I am now at an uncanny valley part of software. emacs-slack does a lot of things right, but, unfortunately I don't think it makes sharing text as easy as it could be.
 
 ** Why?
 Why do I use Emacs? Mostly because I like to break things, and it is very easy for me to break my Emacs set-up.
@@ -28,7 +28,7 @@ If you wish to follow along, you will need to install and set-up emacs-slack
 *** Install
 Let's install [[https://github.com/yuya373/emacs-slack][emacs-slack]]!
 
-If you use use-package as your Emacs package manager, Yuya373 has some code in the emacs-slack repo that you can just [[https://github.com/yuya373/emacs-slack#configure][copy and paste]] into your init file.
+If you use use-package as your Emacs package manager, [[https://github.com/yuya373][Yuya373]] has some code in the emacs-slack repo that you can just [[https://github.com/yuya373/emacs-slack#configure][copy and paste]] into your init file.
 
 If you don't use use-package, you could use [[https://github.com/emacscollective/borg][borg]] to assimilate the package into your Emacs.
 
@@ -40,8 +40,8 @@ To setup emacs-slack, just follow the helpful steps found on the [[https://githu
 *** Play
  If you've never heard of emacs-slack before, this will probably be enough for you. You have emacs-slack setup and running. Play with it. Live it. Love it. Forget about this post.
 ** Let's Dive In
-Enough about you, I have an idea and I want to get it working. I have setup emacs-slack and it's now running. My first step into hacking emacs-slack is to open up some of the files for the package and see what I can divine.
-*** Slack.el
+Enough about you, I have an idea and I want to get it working. I have emacs-slack setup and running. My first step into hacking emacs-slack is to open up some of the files for the package and see what I can divine. [do I need a better hook into what I'm doing? I find it self explanatory now. I am looking to "hack" emacs-slack, using a train of thought style of narrative]
+** Slack.el
 [[https://github.com/yuya373/emacs-slack/blob/master/slack.el][slack.el]] seems like a good place to start.
 Let's see, there are a couple of [[https://www.gnu.org/software/emacs/manual/html_node/eintr/defcustom.html][defcustoms]], some defuns and cl-defuns[fn:1]... but nothing that looks like it has to do with sending messages, which is ultimately what I want to do.
 
