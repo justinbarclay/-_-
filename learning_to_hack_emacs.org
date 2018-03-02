@@ -1,11 +1,9 @@
 * My descent into madness: Hacking Emacs to send text to Slack
 
-An Emacs hack to send text to Slack. This is post outlines my thought process as I learn to hack Emacs.
-
-Luckily, there is all ready a Slack client for Emacs, called emacs-slack. Most of the hard work is done for me, now all I need to do is learn how to bend it to my will.
+I want to get Emacs to send snippets of text from any buffer to Slack. Luckily, there is a Slack client for Emacs, called [[https://github.com/yuya373/emacs-slack][emacs-slack]]. So, most of the hard work is done for me, all I need to do now is to learn how to bend the package to my will.
 
 ** Why?
-Why do you use Emacs? Mostly because I like to break things, and it is very easy for me to break my Emacs set-up.
+Why do I use Emacs? Mostly because I like to break things, and it is very easy for me to break my Emacs set-up.
 
 /No, why use Slack inside of Emacs?/ I like my Slack like I like my Emacs: brittle and glued together with arcane magic I don't understand. There is another benefit of using Slack in Emacs, it takes up fewer resources!
 
