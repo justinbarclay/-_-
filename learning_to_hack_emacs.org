@@ -2,6 +2,8 @@
 
 An Emacs hack to send text to Slack. This is post outlines my thought process as I learn to hack Emacs.
 
+Luckily, there is all ready a Slack client for Emacs, called emacs-slack. Most of the hard work is done for me, now all I need to do is learn how to bend it to my will.
+
 ** Why?
 Why do you use Emacs? Mostly because I like to break things, and it is very easy for me to break my Emacs set-up.
 
@@ -83,7 +85,7 @@ If we look at the top level of the profile trace found in CPU, only two calls lo
 + global-hl-line-highlight                                        720   0%
 #+END_SRC
 *** Command-execute
-If we expand `command-execute` I start to see some interesting calls...
+Expanding command-execute, we start to see some interesting calls...
 **** Enhance
 
 #+BEGIN_SRC
