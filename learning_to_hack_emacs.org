@@ -264,6 +264,6 @@ I have one last enhancement to my function that I want to make: I am almost alwa
 
 [fn:2] Fun note, Emacs Lisp has had an object system, "[[https://www.gnu.org/software/emacs/manual/html_node/eieio/][Enhanced Implementation of Emacs Interpreted Objects]]", since at least 2007 and maybe earlier[fn:3].
 
-[fn:3] EIEIO is actually inspired by [[https://en.wikipedia.org/wiki/Common_Lisp_Object_System][Common Lisp Object System]], doing this dive into Emacs-Slack is teaching me so much about Emacs and Common Lisp!
+[fn:3] EIEIO is actually inspired by [[https://en.wikipedia.org/wiki/Common_Lisp_Object_System][Common Lisp Object System]], doing this dive into emacs-slack is teaching me so much about the history Emacs and Common Lisp!
 
 [fn:4] This is a lie, I did not know about this manual until I started writing this dev diary. This would have saved me hours of very poor google-fu.
