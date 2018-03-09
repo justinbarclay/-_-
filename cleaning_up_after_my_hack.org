@@ -38,9 +38,9 @@ Before I reveal your choice to you I want to quickly show you ~slack-select-room
 
 ~slack-select-room~ is a lot like code I had previously used to choose where to post my message, ~slack-select-channel~, but this allows us to post in any slack room: channels, ims, and groups.
 
+** Back to our regularly scheduled program
 You have chosen "clean up"! A brave choice indeed!
 
-Now let us see what our protagonist is thinking...
 ** Previously on the X-Files...
 [[./images/x-files-mulder-scully.jpg]]
 
@@ -58,7 +58,6 @@ I had figured out how to share any region of a buffer in Emacs and send it to Sl
                                    team)))
 #+END_SRC
 
-
 Unfortunately, that isn't enough for me! I don't always want to demarcate text as code, sometimes I just want to send naked text.
 
 #+BEGIN_SRC emacs-lisp
@@ -74,7 +73,7 @@ Unfortunately, that isn't enough for me! I don't always want to demarcate text a
                                  team)))
 #+END_SRC
 
-Or I want to have my text dress-up and be all snappy in quoted text!
+Or I want to have my text dress-up and be all snappy in quotes!
 #+BEGIN_SRC emacs-lisp
   (defun jb/send-region-to-slack-code ()
     (interactive)
@@ -93,7 +92,7 @@ Or I want to have my text dress-up and be all snappy in quoted text!
 ** Wait a minute
 [[./images/why_isnt_it_working.gif]]
 
-
+Apparently in Markdown's [[https://daringfireball.net/projects/markdown/syntax#blockquote][inifinite wisdom]], they made it so that each line of text you want to quote has to be preceeded by "> ".
 ** Everything is wet!
 If you look at this code it's very repetitive and I feel like a lot of it can be DRY'd up.
 
@@ -114,8 +113,6 @@ Rather then having a different function for each decoration, I can take advantag
 #+END_SRC
 
 Now that we've got the easy part done, let's move onto the harder part in Emacs, programatically manipulating text.
-
-~This parts going to get a little boring, so we're going to have macho man randy savage help explain it~
 
 Inspiration:
 http://ergoemacs.org/emacs/elisp_process_lines.html
