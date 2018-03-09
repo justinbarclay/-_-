@@ -1,4 +1,162 @@
 * Outline
+
+When last we left our heroes, they were in the deep woods of Emacs. After hacking at a few goblins, all named Slack, our heroes must now decide where they must go next...
+
+What shall our heroes do?
+
+#+BEGIN_SRC web
+  // Notes to self this is just an rough outline of what I want. I am going to have to program this myself.
+
+  <div>
+      <input type="radio" id="fight"
+             name="quest" value="fight">
+      <label for="contactChoice1">Fight the evil wizard Vim</label>
+
+      <input type="radio" id="clean"
+             name="quest" value="clean">
+      <label for="contactChoice2">Clean up</label>
+  </div>
+  <script>
+   document.addEventListener('click',
+                             function(event){
+                                 $.selectElement('questChoice').value('clean_up');
+                             });
+  </script>
+#+END_SRC
+
+You have chosen "clean up"! A brave choice indeed!
+
+Now let us see what our protagonist is thinking...
+
+Previously, I had figured out how to share any region of a buffer in Emacs and send it to Slack with it decorated as code
+#+BEGIN_SRC emacs-lisp tangle
+  (defun jb/send-region-to-slack-code ()
+    (interactive)
+    (let* ((team (slack-team-select))  ;; Get all rooms from selected team
+           (room (slack-room-select
+                  (cl-loop for team in (list team)
+                           append (with-slots (groups ims channels) team
+                                    (append ims groups channels))))))
+      (slack-message-send-internal (concat "```" (filter-buffer-substring (region-beginning) (region-end)) "```")
+                                   (oref room id)
+                                   team)))
+
+#+END_SRC
+
+Since then, my needs have expanded and I don't always want to demarcate text as code. Sometimes I just want to send naked text.
+
+#+BEGIN_SRC emacs-lisp
+(defun jb/send-region-to-slack ()
+  (interactive)
+  (let ((team (slack-team-select)) ;; Select team
+        (room (slack-room-select
+               (cl-loop for team in (list team)
+                        for channels = (oref team channels)
+                        nconc channels)))) ;; Get all rooms from selected team
+    (slack-message-send-internal (filter-buffer-substring (region-beginning) (region-end))
+                                 (oref room id)
+                                 team)))
+#+END_SRC
+
+...or quoted text
+#+BEGIN_SRC emacs-lisp
+  (defun jb/send-region-to-slack-code ()
+    (interactive)
+    (let* ((team (slack-team-select))  ;; Get all rooms from selected team
+           (room (slack-room-select
+                  (cl-loop for team in (list team)
+                           append (with-slots (groups ims channels) team
+                                    (append ims groups channels))))))
+      (slack-message-send-internal (concat "> " (filter-buffer-substring (region-beginning) (region-end)))
+                                   (oref room id)
+                                   team)))
+
+#+END_SRC
+
+If you look at this code it's very repetitive and I feel like a lot of it can be DRY'd up.
+
+Rather then having a different function for each decoration, I can take advantage of [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Minibuffer-Completion.html][Emacs completion framework]].
+
+#+BEGIN_SRC emacs-lisp
+  (setq-local decorators '(("None" . (lambda (text) text))
+                           ("Code"  . (lambda (text) (concat "```" text "```")))
+                           ("Quote"  . (lambda (text) text))))
+
+    (defun decorate-text ()
+      (interactive)
+      (let ((decoration (completing-read "Select decoration: "
+                                         decorators
+                                         nil
+                                         t)))
+        (message (funcall (cdr (assoc decoration decorators)) "Oh yeah"))))
+#+END_SRC
+
+Now that we've got the easy part done, let's move onto the harder part in Emacs, programatically manipulating text.
+
+~This parts going to get a little boring, so we're going to have macho man randy savage help explain it~
+
+Inspiration:
+http://ergoemacs.org/emacs/elisp_process_lines.html
+https://emacs.stackexchange.com/a/2193
+https://www.gnu.org/software/emacs/manual/html_node/elisp/Current-Buffer.html
+
+#+BEGIN_SRC emacs-lisp
+  (defun jb/slack-quote-region (region)
+    (with-temp-buffer
+      (insert region)
+      (goto-char 1) ;; Go to beginning of temporary buffer
+      (while (> (point-max) (point)) ;; point is where cursor is in buffer, point-max is last position in buffer
+        (beginning-of-line) ;; Always make sure we're at the beginning of the line
+        (insert "> ") ;; Insert at point
+        (forward-line 1)) ;; Go to next line
+      (buffer-string))) ;; Return contents of temp buffer
+#+END_SRC
+
+So now this means we can update our decorators
+
+#+BEGIN_SRC emacs-lisp
+(setq-local decorators '(("None" . (lambda (text) text)) ;; The identity function
+                         ("Code"  . (lambda (text) (concat "```" text "```")))
+                         ("Quote"  . (lambda (text) (jb/slack-quote-region text))))
+#+END_SRC
+
+** Bringing it all together
+We've searched through the puzzle box and found all the pieces. Let's put them together
+#+BEGIN_SRC emacs-lisp
+  (defun jb/slack-quote-region (region)
+      (with-temp-buffer
+        (insert region)
+        (goto-char 1)
+        (while (> (point-max) (point))
+          (beginning-of-line)
+          (insert "> ")
+          (forward-line 1))
+        (buffer-string)))
+
+  (defun jb/decorate-text (text)
+    (let* ((decorators '(("None" . (lambda (text) text))
+                         ("Code"  . (lambda (text) (concat "```" text "```")))
+                         ("Quote"  . (lambda (text) (jb/slack-quote-region text)))))
+           (decoration (completing-read "Select decoration: "
+                                        decorators
+                                        nil
+                                        t)))
+      (funcall (cdr (assoc decoration decorators)) text)))
+
+
+  (defun jb/send-region-to-slack ()
+    (interactive)
+    (let* ((team (slack-team-select))
+           (room (slack-room-select
+                  (cl-loop for team in (list team)
+                           append (with-slots (groups ims channels) team
+                                    (append ims groups channels))))))
+      (slack-message-send-internal (jb/decorate-text (filter-buffer-substring (region-beginning) (region-end)))
+                                   (oref room id)
+                                   team)))
+#+END_SRC
+
+This is perfect, thanks to the updates I've covered here, my code base is smaller, more powerful, and I think in a state I can make a pull request out of it.
 ** Let's clean this up
 *** make it more generic, not just channels, but any type of room!
 *** Markdown that markup!
