@@ -24,11 +24,27 @@ What shall our heroes do?
   </script>
 #+END_SRC
 
+Before I reveal your choice to you I want to quickly show you ~slack-select-room~ which can be found in [[https://github.com/yuya373/emacs-slack/blob/master/slack-room.el#L256][slack-room.el]]
+#+BEGIN_SRC emacs-lisp
+(defun slack-select-rooms ()
+  (interactive)
+  (let* ((team (slack-team-select))
+         (room (slack-room-select
+                (cl-loop for team in (list team)
+                         append (with-slots (groups ims channels) team
+                                  (append ims groups channels))))))
+    (slack-room-display room team)))
+#+END_SRC
+
+~slack-select-room~ is a lot like code I had previously used to choose where to post my message, ~slack-select-channel~, but this allows us to post in any slack room: channels, ims, and groups.
+
 You have chosen "clean up"! A brave choice indeed!
 
 Now let us see what our protagonist is thinking...
+** Previously on the X-Files...
+[[./images/x-files-mulder-scully.jpg]]
 
-Previously, I had figured out how to share any region of a buffer in Emacs and send it to Slack with it decorated as code
+I had figured out how to share any region of a buffer in Emacs and send it to Slack with it decorated as code.
 #+BEGIN_SRC emacs-lisp tangle
   (defun jb/send-region-to-slack-code ()
     (interactive)
@@ -40,10 +56,10 @@ Previously, I had figured out how to share any region of a buffer in Emacs and s
       (slack-message-send-internal (concat "```" (filter-buffer-substring (region-beginning) (region-end)) "```")
                                    (oref room id)
                                    team)))
-
 #+END_SRC
 
-Since then, my needs have expanded and I don't always want to demarcate text as code. Sometimes I just want to send naked text.
+
+Unfortunately, that isn't enough for me! I don't always want to demarcate text as code, sometimes I just want to send naked text.
 
 #+BEGIN_SRC emacs-lisp
 (defun jb/send-region-to-slack ()
@@ -58,7 +74,7 @@ Since then, my needs have expanded and I don't always want to demarcate text as 
                                  team)))
 #+END_SRC
 
-...or quoted text
+Or I want to have my text dress-up and be all snappy in quoted text!
 #+BEGIN_SRC emacs-lisp
   (defun jb/send-region-to-slack-code ()
     (interactive)
@@ -70,9 +86,15 @@ Since then, my needs have expanded and I don't always want to demarcate text as 
       (slack-message-send-internal (concat "> " (filter-buffer-substring (region-beginning) (region-end)))
                                    (oref room id)
                                    team)))
-
 #+END_SRC
 
+[[./images/its_not_working.gif]]
+
+** Wait a minute
+[[./images/why_isnt_it_working.gif]]
+
+
+** Everything is wet!
 If you look at this code it's very repetitive and I feel like a lot of it can be DRY'd up.
 
 Rather then having a different function for each decoration, I can take advantage of [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Minibuffer-Completion.html][Emacs completion framework]].
