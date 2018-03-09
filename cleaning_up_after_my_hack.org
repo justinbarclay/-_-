@@ -89,10 +89,58 @@ Or I want to have my text dress-up and be all snappy in quotes!
 
 [[./images/its_not_working.gif]]
 
-** Wait a minute
+** Wait A Minute
 [[./images/why_isnt_it_working.gif]]
 
 Apparently in Markdown's [[https://daringfireball.net/projects/markdown/syntax#blockquote][inifinite wisdom]], they made it so that each line of text you want to quote has to be preceeded by "> ".
+
+** Houston We Have A Problem
+I've run into a big problem. I don't know how to iterate through text in a buffer.
+
+Iterating through a list of strings is easy, after all this is lisp, the language is meant for processing lists! Below, all I had to do was [[https://www.gnu.org/software/emacs/manual/html_node/eintr/mapcar.html][mapcar]] over a list of strings and concat "> " to the beginning of each item.
+
+#+BEGIN_SRC emacs-lisp
+  (setq quotes '("I hope he didn’t die. Unless he left a note naming me his successor, then I hope he did die."
+                    "I’m so embarrassed. I wish everybody else was dead."
+                    "Have you ever tried simply turning off your TV, sitting down with your child, and hitting them?"))
+
+  (mapcar (lambda (line) (concat "> " line)) quotes)
+#+END_SRC
+
+#+RESULTS:
+| > I hope he didn’t die. Unless he left a note naming me his successor, then I hope he did die.    |
+| > I’m so embarrassed. I wish everybody else was dead.                                             |
+| > Have you ever tried simply turning off your TV, sitting down with your child, and hitting them? |
+
+But if we step this up a notch, we get an error letting us know that we are not doing what we think we are doing.
+#+BEGIN_SRC emacs-lisp
+  (defun quote-region ()
+    (interactive)
+    (message (mapcar (lambda (line) (concat "> " line)) (filter-buffer-substring (region-beginning) (region-end)))))
+#+END_SRC
+
+#+RESULTS:
+| Wrong type argument: sequencep, 40 |
+
+** Oddity
+[[./images/BowieSpaceOddity.jpg]]
+
+No not a space oddity
+
+#+BEGIN_SRC emacs-lisp
+  (defun quote-region ()
+    (interactive)
+    (message
+     (mapcar (lambda (line) (concat "> " line))
+             (split-string
+              (filter-buffer-substring (region-beginning) (region-end))
+              "\n"
+              t))))
+#+END_SRC
+
+#+RESULTS:
+| Wrong type argument: stringp, (#("> Hello" 2 7 (fontified t font-lock-fontified t help-echo nil src-block t ws-butler-chg chg ...)) #("> World" 2 7 (fontified t font-lock-fontified t help-echo nil src-block t ws-butler-chg chg ...))) |
+
 ** Everything is wet!
 If you look at this code it's very repetitive and I feel like a lot of it can be DRY'd up.
 
@@ -107,9 +155,9 @@ Rather then having a different function for each decoration, I can take advantag
       (interactive)
       (let ((decoration (completing-read "Select decoration: "
                                          decorators
-                                         nil
+                                         nil[[BowieSpaceOddity.jpg]
                                          t)))
-        (message (funcall (cdr (assoc decoration decorators)) "Oh yeah"))))
+        (message (funcall (cdr (./images/assoc decoration decorators)) "Oh yeah"))))]
 #+END_SRC
 
 Now that we've got the easy part done, let's move onto the harder part in Emacs, programatically manipulating text.
