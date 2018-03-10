@@ -75,14 +75,18 @@ Unfortunately, that isn't enough for me! I don't always want to demarcate text a
 
 Or I want to have my text dress-up and be all snappy in quotes!
 #+BEGIN_SRC emacs-lisp
-  (defun jb/send-region-to-slack-code ()
+  (defun jb/send-region-to-slack-quotes ()
     (interactive)
     (let* ((team (slack-team-select))  ;; Get all rooms from selected team
            (room (slack-room-select
                   (cl-loop for team in (list team)
                            append (with-slots (groups ims channels) team
                                     (append ims groups channels))))))
-      (slack-message-send-internal (concat "> " (filter-buffer-substring (region-beginning) (region-end)))
+      (slack-message-send-internal (mapcar (lambda (line) (concat "> " line))
+                                           (split-string
+                                            (filter-buffer-substring (region-beginning) (region-end))
+                                            "\n"
+                                            t))
                                    (oref room id)
                                    team)))
 #+END_SRC
@@ -112,21 +116,27 @@ Iterating through a list of strings is easy, after all this is lisp, the languag
 | > I’m so embarrassed. I wish everybody else was dead.                                             |
 | > Have you ever tried simply turning off your TV, sitting down with your child, and hitting them? |
 
-But if we step this up a notch, we get an error letting us know that we are not doing what we think we are doing.
+But if we step this up a notch and apply this to work on a region, we get an error letting us know that we are not doing what we think we are doing.
+
 #+BEGIN_SRC emacs-lisp
-  (defun quote-region ()
-    (interactive)
-    (message (mapcar (lambda (line) (concat "> " line)) (filter-buffer-substring (region-beginning) (region-end)))))
+    (defun quote-region ()
+      (interactive)
+      (message
+       (mapcar (lambda (line) (concat "> " line))
+                       (filter-buffer-substring (region-beginning) (region-end)))))
 #+END_SRC
 
 #+RESULTS:
 | Wrong type argument: sequencep, 40 |
 
-** Oddity
+** Text Oddity
 [[./images/BowieSpaceOddity.jpg]]
 
-No not a space oddity
+No, not Space Oddity.
 
+As a beginner, I find interactive and programattic text processing in Emacs to be an oddity. I have built up an intuition on how to deal with string manipulation in other environments and that doesn't map well to the way Emacs thinks about strings, or particularly text in buffers.
+
+Here I have an expanded version of ~quote-region~, where I try to convert a buffer region into a list of strings and then apply my transformation to each string.
 #+BEGIN_SRC emacs-lisp
   (defun quote-region ()
     (interactive)
@@ -137,6 +147,8 @@ No not a space oddity
               "\n"
               t))))
 #+END_SRC
+
+Surprisingly, this gets us a lot farther but now I'm hitting a type error somewhere. It's pretty easy to guess which function is causing this, message, and if we look at the function signature of message it confirms my suspicion ~(message FORMAT-STRING &rest ARGS)~.
 
 #+RESULTS:
 | Wrong type argument: stringp, (#("> Hello" 2 7 (fontified t font-lock-fontified t help-echo nil src-block t ws-butler-chg chg ...)) #("> World" 2 7 (fontified t font-lock-fontified t help-echo nil src-block t ws-butler-chg chg ...))) |
@@ -155,9 +167,8 @@ Rather then having a different function for each decoration, I can take advantag
       (interactive)
       (let ((decoration (completing-read "Select decoration: "
                                          decorators
-                                         nil[[BowieSpaceOddity.jpg]
-                                         t)))
-        (message (funcall (cdr (./images/assoc decoration decorators)) "Oh yeah"))))]
+                                         nil))
+        (message (funcall (cdr (./images/assoc decoration decorators)) "Oh yeah")))))
 #+END_SRC
 
 Now that we've got the easy part done, let's move onto the harder part in Emacs, programatically manipulating text.
