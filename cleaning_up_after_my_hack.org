@@ -137,6 +137,7 @@ No, not Space Oddity.
 As a beginner, I find interactive and programattic text processing in Emacs to be an oddity. I have built up an intuition on how to deal with string manipulation in other environments and that doesn't map well to the way Emacs thinks about strings, or particularly text in buffers.
 
 Here I have an expanded version of ~quote-region~, where I try to convert a buffer region into a list of strings and then apply my transformation to each string.
+
 #+BEGIN_SRC emacs-lisp
   (defun quote-region ()
     (interactive)
@@ -148,11 +149,45 @@ Here I have an expanded version of ~quote-region~, where I try to convert a buff
               t))))
 #+END_SRC
 
-Surprisingly, this gets us a lot farther but now I'm hitting a type error somewhere. It's pretty easy to guess which function is causing this, message, and if we look at the function signature of message it confirms my suspicion ~(message FORMAT-STRING &rest ARGS)~.
+Surprisingly, this gets us a lot farther, but now I'm hitting a type error somewhere. It's pretty easy to guess the ~message~ function is causing us problems. By looking at the function signature of message, ~(message FORMAT-STRING &rest ARGS)~, it confirms my suspicion. That means all I need to do is join this list of strings into one string and all of my woes should be solved.
 
 #+RESULTS:
 | Wrong type argument: stringp, (#("> Hello" 2 7 (fontified t font-lock-fontified t help-echo nil src-block t ws-butler-chg chg ...)) #("> World" 2 7 (fontified t font-lock-fontified t help-echo nil src-block t ws-butler-chg chg ...))) |
 
+Voila, we have a function that operates on a region of a buffer, adds a quote marker to the beginning of each line and returns a string for us to be able to use elsewhere.
+#+BEGIN_SRC emacs-lisp
+  (defun quote-region ()
+    (interactive)
+    (message
+     (string-join
+      (mapcar (lambda (line) (concat "> " line))
+              (split-string
+               (filter-buffer-substring (region-beginning) (region-end))
+               "\n"
+               t))
+      "\n")))
+#+END_SRC
+
+** Houston, we still have a problem
+
+I now have a function that works, but it's hacky, way too hacky for me. I feel that text manipulation in a text editor has to be a lot easier then having to split a string, map over a list, then rejoin that string.
+
+Unfortunately, I don't think the [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Current-Buffer.html][documentation]] [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Excursions.html#Excursions][in]] [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Text-Lines.html#Text-Lines][Emacs]] is really up to par with building up a good mental framework for how to programatically manipulate text. I had to do a [[http://ergoemacs.org/emacs/elisp_process_lines.html][lot]] of [[https://emacs.stackexchange.com/a/2193][googling]] to be able to point me in the right direction.
+
+I realize that I'm in kind of a unique spot though. I want to: copy a region/buffer, mutate some text, provide this text as a return value from a function, and not mutate or changed them buffer I am currently in. Luckily Emacs, has all of the tools to do this and some of them are very easy to find.
+
+After a lot of reading and thinking I've settled on: I want to copy the current region into a temporary buffer, loop over each line until we hit the end, at the beginning of each line insert "> ", finally return the contents of this buffer once I've left the loop.
+#+BEGIN_SRC emacs-lisp
+  (defun jb/slack-quote-region (region)
+    (with-temp-buffer
+      (insert region)
+      (goto-char 1) ;; Go to beginning of temporary buffer
+      (while (> (point-max) (point)) ;; point is where cursor is in buffer, point-max is last position in buffer
+        (beginning-of-line) ;; Always make sure we're at the beginning of the line
+        (insert "> ") ;; Insert at point
+        (forward-line 1)) ;; Go to next line
+      (buffer-string)) ;; Return contents of temp buffer
+#+END_SRC
 ** Everything is wet!
 If you look at this code it's very repetitive and I feel like a lot of it can be DRY'd up.
 
@@ -168,27 +203,12 @@ Rather then having a different function for each decoration, I can take advantag
       (let ((decoration (completing-read "Select decoration: "
                                          decorators
                                          nil))
-        (message (funcall (cdr (./images/assoc decoration decorators)) "Oh yeah")))))
+        (message (funcall (cdr (assoc decoration decorators)) "Oh yeah")))))
 #+END_SRC
 
 Now that we've got the easy part done, let's move onto the harder part in Emacs, programatically manipulating text.
 
 Inspiration:
-http://ergoemacs.org/emacs/elisp_process_lines.html
-https://emacs.stackexchange.com/a/2193
-https://www.gnu.org/software/emacs/manual/html_node/elisp/Current-Buffer.html
-
-#+BEGIN_SRC emacs-lisp
-  (defun jb/slack-quote-region (region)
-    (with-temp-buffer
-      (insert region)
-      (goto-char 1) ;; Go to beginning of temporary buffer
-      (while (> (point-max) (point)) ;; point is where cursor is in buffer, point-max is last position in buffer
-        (beginning-of-line) ;; Always make sure we're at the beginning of the line
-        (insert "> ") ;; Insert at point
-        (forward-line 1)) ;; Go to next line
-      (buffer-string))) ;; Return contents of temp buffer
-#+END_SRC
 
 So now this means we can update our decorators
 
