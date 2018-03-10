@@ -82,11 +82,7 @@ Or I want to have my text dress-up and be all snappy in quotes!
                   (cl-loop for team in (list team)
                            append (with-slots (groups ims channels) team
                                     (append ims groups channels))))))
-      (slack-message-send-internal (mapcar (lambda (line) (concat "> " line))
-                                           (split-string
-                                            (filter-buffer-substring (region-beginning) (region-end))
-                                            "\n"
-                                            t))
+      (slack-message-send-internal (concat "> " (filter-buffer-substring (region-beginning) (region-end)))
                                    (oref room id)
                                    team)))
 #+END_SRC
@@ -149,7 +145,7 @@ Here I have an expanded version of ~quote-region~, where I try to convert a buff
               t))))
 #+END_SRC
 
-Surprisingly, this gets us a lot farther, but now I'm hitting a type error somewhere. It's pretty easy to guess the ~message~ function is causing us problems. By looking at the function signature of message, ~(message FORMAT-STRING &rest ARGS)~, it confirms my suspicion. That means all I need to do is join this list of strings into one string and all of my woes should be solved.
+Surprisingly, this got me a lot farther, but now I'm hitting a type error somewhere. It's pretty easy to guess the ~message~ function is causing us problems. By looking at the function signature of message, ~(message FORMAT-STRING &rest ARGS)~, it confirms my suspicion. That means all I need to do is join this list of strings into one string and all of my woes should be solved.
 
 #+RESULTS:
 | Wrong type argument: stringp, (#("> Hello" 2 7 (fontified t font-lock-fontified t help-echo nil src-block t ws-butler-chg chg ...)) #("> World" 2 7 (fontified t font-lock-fontified t help-echo nil src-block t ws-butler-chg chg ...))) |
@@ -176,7 +172,7 @@ Unfortunately, I don't think the [[https://www.gnu.org/software/emacs/manual/htm
 
 I realize that I'm in kind of a unique spot though. I want to: copy a region/buffer, mutate some text, provide this text as a return value from a function, and not mutate or changed them buffer I am currently in. Luckily Emacs, has all of the tools to do this and some of them are very easy to find.
 
-After a lot of reading and thinking I've settled on: I want to copy the current region into a temporary buffer, loop over each line until we hit the end, at the beginning of each line insert "> ", finally return the contents of this buffer once I've left the loop.
+After a lot of reading and thinking I've settled on: I want to copy the current region into a temporary buffer, loop over each line until we hit the end, at the beginning of each line insert "> ", finally return the contents of this buffer once I've left the loop.[fn:1]
 #+BEGIN_SRC emacs-lisp
   (defun jb/slack-quote-region (region)
     (with-temp-buffer
@@ -186,39 +182,56 @@ After a lot of reading and thinking I've settled on: I want to copy the current 
         (beginning-of-line) ;; Always make sure we're at the beginning of the line
         (insert "> ") ;; Insert at point
         (forward-line 1)) ;; Go to next line
-      (buffer-string)) ;; Return contents of temp buffer
+      (buffer-string))) ;; Return contents of temp buffer
 #+END_SRC
-** Everything is wet!
-If you look at this code it's very repetitive and I feel like a lot of it can be DRY'd up.
 
-Rather then having a different function for each decoration, I can take advantage of [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Minibuffer-Completion.html][Emacs completion framework]].
+Finally we have something that works well, and seems a lot more Emacs-ish.
 
 #+BEGIN_SRC emacs-lisp
-  (setq-local decorators '(("None" . (lambda (text) text))
-                           ("Code"  . (lambda (text) (concat "```" text "```")))
-                           ("Quote"  . (lambda (text) text))))
-
-    (defun decorate-text ()
-      (interactive)
-      (let ((decoration (completing-read "Select decoration: "
-                                         decorators
-                                         nil))
-        (message (funcall (cdr (assoc decoration decorators)) "Oh yeah")))))
+  (defun jb/send-region-to-slack-quotes ()
+    (interactive)
+    (let* ((team (slack-team-select))  ;; Get all rooms from selected team
+           (room (slack-room-select
+                  (cl-loop for team in (list team)
+                           append (with-slots (groups ims channels) team
+                                    (append ims groups channels))))))
+      (slack-message-send-internal (jb/slack-quote-region (filter-buffer-substring (region-beginning) (region-end)))
+                                   (oref room id)
+                                   team)))
 #+END_SRC
 
-Now that we've got the easy part done, let's move onto the harder part in Emacs, programatically manipulating text.
+** I've Brought My Towel
+#+BEGIN_QUOTE
+In the beginning the Universe was created. This has made a lot of people very angry and been widely regarded as a bad move.
+#+END_QUOTE
 
-Inspiration:
+All right, after looking at everything I've written so far I don't like it. It's all very wet behind the ear code, and I think with a bit of forethough and a towel I can dry it up.
 
-So now this means we can update our decorators
+*** Like A Desert
+Instead of having to call a different function for each decoration I want to apply to a region, I can take advantage of [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Minibuffer-Completion.html][Emacs' completion framework]].
+
+A simple example of how the ~completing-read~ function works is that it takes in a prompt and a list of choices. When this function is run it prompts the user for a choice in the minibuffer and returns the users choice.
 
 #+BEGIN_SRC emacs-lisp
-(setq-local decorators '(("None" . (lambda (text) text)) ;; The identity function
-                         ("Code"  . (lambda (text) (concat "```" text "```")))
-                         ("Quote"  . (lambda (text) (jb/slack-quote-region text))))
+  (setq choices '("It's amazing" "It's awesome" "Better than Vim"))
+  (completing-read "What do you think of Emacs?: " choices)
 #+END_SRC
 
-** Bringing it all together
+I've decided to take things a step farther: I'm using an [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Association-Lists.html][alist]] as a key-value store and taking advantage of the fact that when ~completing-read~ is passed an association list it takes the CAR of each list as the options for the function.
+#+BEGIN_SRC emacs-lisp
+  (setq decorators '(("None" . (lambda (text) text)) ;; The identity function
+                     ("Code"  . (lambda (text) (concat "```" text "```")))
+                     ("Quote"  . (lambda (text) (jb/slack-quote-region text)))))
+
+  (defun decorate-text ()
+    (interactive)
+    (let ((decoration (completing-read "Select decoration: "
+                                       decorators
+                                       nil)
+                                       t)
+          (message (funcall (cdr (assoc decoration decorators)) "Oh yeah")))))
+#+END_SRC
+*** Like A Dessert
 We've searched through the puzzle box and found all the pieces. Let's put them together
 #+BEGIN_SRC emacs-lisp
   (defun jb/slack-quote-region (region)
@@ -241,7 +254,6 @@ We've searched through the puzzle box and found all the pieces. Let's put them t
                                         t)))
       (funcall (cdr (assoc decoration decorators)) text)))
 
-
   (defun jb/send-region-to-slack ()
     (interactive)
     (let* ((team (slack-team-select))
@@ -259,3 +271,5 @@ This is perfect, thanks to the updates I've covered here, my code base is smalle
 *** make it more generic, not just channels, but any type of room!
 *** Markdown that markup!
 *** DRY IT UP!
+** Foot Notes
+[fn:1] I think it's important to note that all operations happened based around point, cursor, this is why at the beginning of each loop we move point to the beginning of line.
