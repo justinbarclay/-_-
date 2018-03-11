@@ -77,11 +77,10 @@ Or I want to have my text dress-up in some snappy quotes!
 Apparently, in [[https://daringfireball.net/projects/markdown/syntax#blockquote][Markdown]] you have to put "> " at the beginning of each line you want to say is a quote, and not sure at the beginning or surrounded like in a code block.
 
 ** Houston We Have A Problem
-I've run into a big problem. I don't know how to iterate through text in a buffer. Sure I can copy it, copying is easy, but editing text while not editing the buffer seems to be tricky.
+I've run into a problem, a big problem. I don't know how to iterate through text in a buffer. Sure I can copy it, copying is easy, but editing text while not also editing the buffer seems to be tricky.
 
-Iterating through a list of strings is easy after all this is lisp, the language is meant for processing lists! If I want to edit a list of string all I really have to do is  [[https://www.gnu.org/software/emacs/manual/html_node/eintr/mapcar.html][mapcar]] over a list of strings and concat "> " to the beginning of each item.
-
-#+BEGIN_SRC emacs-lisp :export both
+Iterating through a list of strings is easy after all this is lisp, the language is meant for list processing! If I want to edit a list of strings all I have to do is [[https://www.gnu.org/software/emacs/manual/html_node/eintr/mapcar.html][map]] over a list of strings and then concat "> " to the beginning of each one.
+#+BEGIN_SRC emacs-lisp :exports both
   (setq quotes '("I hope he didn’t die. Unless he left a note naming me his successor, then I hope he did die."
                     "I’m so embarrassed. I wish everybody else was dead."
                     "Have you ever tried simply turning off your TV, sitting down with your child, and hitting them?"))
