@@ -4,27 +4,9 @@ When last we left our heroes, they were in the deep woods of Emacs. After hackin
 
 What shall our heroes do?
 
-#+BEGIN_SRC web
-  // Notes to self this is just a rough outline of what I want. I am going to have to program this myself.
+[[https://codepen.io/emoarmy/pen/eMNmze][Can codepens be inlined?]]
 
-  <div>
-      <input type="radio" id="fight"
-             name="quest" value="fight">
-      <label for="contactChoice1">Fight the evil wizard Vim</label>
-
-      <input type="radio" id="clean"
-             name="quest" value="clean">
-      <label for="contactChoice2">Clean up</label>
-  </div>
-  <script>
-   document.addEventListener('click',
-                             function(event){
-                                 $.selectElement('questChoice').value('clean_up');
-                             });
-  </script>
-#+END_SRC
-
-Before I reveal your choice to you I want to quickly show you ~slack-select-room~ which can be found in [[https://github.com/yuya373/emacs-slack/blob/master/slack-room.el#L256][slack-room.el]]
+Before I look at your choice I want to quickly show you ~slack-select-room~ which can be found in [[https://github.com/yuya373/emacs-slack/blob/master/slack-room.el#L256][slack-room.el]]
 #+BEGIN_SRC emacs-lisp
 (defun slack-select-rooms ()
   (interactive)
@@ -237,14 +219,15 @@ I've decided to take things a step farther: I'm using an [[https://www.gnu.org/s
 Finally, I've scoured the forbidden desert and found all the pieces necessary to create a simpler and easier to customize a solution for sending a region of text to Slack.
 
 #+BEGIN_SRC emacs-lisp
-  (with-temp-buffer
-    (insert region)
-    (goto-char 1)
-    (while (> (point-max) (point))
-      (beginning-of-line)
-      (insert "> ")
-      (forward-line 1))
-    (buffer-string))
+  (defun jb/slack-quote-region ()
+      (with-temp-buffer
+        (insert region)
+        (goto-char 1)
+        (while (> (point-max) (point))
+          (beginning-of-line)
+          (insert "> ")
+          (forward-line 1))
+        (buffer-string)))
 
   (defun jb/decorate-text (text)
     (let* ((decorators '(("None" . (lambda (text) text))
