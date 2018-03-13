@@ -1,11 +1,10 @@
 * Outline
 
-When last we left our heroes, they were in the deep woods of Emacs. After hacking at a few goblins, all named Slack, our heroes must now decide where they must go next...
-
-What shall our heroes do?
+When last we left our heroes they were in the deep woods of Emacs. After hacking at a few slack goblins, our heroes must decide what to do now...
 
 [[https://codepen.io/emoarmy/pen/eMNmze][Can codepens be inlined?]]
 
+** Precursor
 Before I look at your choice I want to quickly show you ~slack-select-room~ which can be found in [[https://github.com/yuya373/emacs-slack/blob/master/slack-room.el#L256][slack-room.el]]
 #+BEGIN_SRC emacs-lisp
 (defun slack-select-rooms ()
@@ -57,16 +56,19 @@ Unfortunately, that isn't enough for me! I don't always want to demarcate text a
 
 Or I want to have my text dress-up in some snappy quotes!
 #+BEGIN_SRC emacs-lisp
-  (defun jb/send-region-to-slack-quotes ()
-    (interactive)
-    (let* ((team (slack-team-select))  ;; Get all rooms from selected team
-           (room (slack-room-select
-                  (cl-loop for team in (list team)
-                           append (with-slots (groups ims channels) team
-                                    (append ims groups channels))))))
-      (slack-message-send-internal (concat "> " (filter-buffer-substring (region-beginning) (region-end)))
-                                   (oref room id)
-                                   team)))
+    (defun jb/send-region-to-slack-quotes ()
+      (interactive)
+      (let* ((team (slack-team-select))  ;; Get all rooms from selected team
+             (room (slack-room-select
+                    (cl-loop for team in (list team)
+                             append (with-slots (groups ims channels) team
+                                      (append ims groups channels))))))
+        (slack-message-send-internal (concat "> "
+                                             (filter-buffer-substring
+                                              (region-beginning)
+                                              (region-end)))
+                                     (oref room id)
+                                     team)))
 #+END_SRC
 
 [[./images/its_not_working.gif]]
@@ -77,13 +79,13 @@ Or I want to have my text dress-up in some snappy quotes!
 So... in [[https://daringfireball.net/projects/markdown/syntax#blockquote][Markdown]] you have to put "> " at the beginning of *each* line you want to say is a quote.
 
 ** Houston We Have A Problem
-I've run into a problem, a big problem. I don't know how to iterate through text in a buffer. Sure I can copy it, copying is easy, but editing text while not also editing the buffer seems to be tricky.
+I've run into a problem, a big problem. I don't know how to iterate through text in a buffer. Sure I can copy it, copying is easy, but editing text while not also editing the buffer is tricky.
 
 Iterating through a list of strings is easy after all this is lisp, the language is meant for list processing! If I want to edit a list of strings all I have to do is [[https://www.gnu.org/software/emacs/manual/html_node/eintr/mapcar.html][map]] over a list of strings and then concat "> " to the beginning of each one.
 #+BEGIN_SRC emacs-lisp :exports both
   (setq quotes '("I hope he didn’t die. Unless he left a note naming me his successor, then I hope he did die."
-                    "I’m so embarrassed. I wish everybody else was dead."
-                    "Have you ever tried simply turning off your TV, sitting down with your child, and hitting them?"))
+                 "I’m so embarrassed. I wish everybody else was dead."
+                 "Have you ever tried simply turning off your TV, sitting down with your child, and hitting them?"))
 
   (mapcar (lambda (line) (concat "> " line)) quotes)
 #+END_SRC
@@ -93,7 +95,7 @@ Iterating through a list of strings is easy after all this is lisp, the language
 | > I’m so embarrassed. I wish everybody else was dead.                                             |
 | > Have you ever tried simply turning off your TV, sitting down with your child, and hitting them? |
 
-If I step this up a notch and apply this to work on a region, we get an error letting us know that we are not doing what we think we are doing.
+If I step this up a notch and apply this to work on a region, I get an error letting me know that I am not doing what we think we are doing.
 
 #+BEGIN_SRC emacs-lisp :exports both
     (defun quote-region ()
@@ -111,7 +113,7 @@ If I step this up a notch and apply this to work on a region, we get an error le
 
 No, not Space Oddity.
 
-As a beginner in elisp, I find interactive and programmatic text processing in Emacs to be an oddity. I have built up an intuition on how to deal with string manipulation in other environments, however, that doesn't map well to the way Emacs thinks about manipulating text in buffers.
+As a beginner in elisp, I find interactive and programmatic text processing to be an oddity. I have built up an intuition on how to deal with string manipulation in other environments, however, that doesn't map well to the way Emacs thinks about manipulating text in buffers.
 
 My next guess is to try and split the buffer based on new-line...
 
@@ -126,12 +128,12 @@ My next guess is to try and split the buffer based on new-line...
               t))))
 #+END_SRC
 
-Surprisingly, this got me a lot farther, but I'm hitting a type error somewhere. My first guess is that the ~message~ function is causing me problems. By looking at the function signature of message, ~(message FORMAT-STRING &rest ARGS)~, it confirms my suspicion. Now, all I need to do is join this list of strings into one string and all of my woes will be solved.
+Surprisingly, this got me a lot farther, but I'm hitting a type error somewhere. My first guess is that the ~message~ function is causing me problems. My suspicions are confiemd when I look at the function signature of message, ~(message FORMAT-STRING &rest ARGS)~. Now, all I need to do is join this list of strings into one string and all of my woes will be solved.
 
 #+RESULTS:
 | Wrong type argument: stringp, (#("> Hello" 2 7 (fontified t font-lock-fontified t help-echo nil src-block t ws-butler-chg chg ...)) #("> World" 2 7 (fontified t font-lock-fontified t help-echo nil src-block t ws-butler-chg chg ...))) |
 
-Voila, we have a function that operates on a region of a buffer, adds a quote marker to the beginning of each line and returns a string for us to be able to use elsewhere.
+Voila, we have a function that operates on a region by adding a quote marker to the beginning of each line and returns a string for use elsewhere.
 #+BEGIN_SRC emacs-lisp
   (defun quote-region ()
     (interactive)
@@ -147,13 +149,13 @@ Voila, we have a function that operates on a region of a buffer, adds a quote ma
 
 ** Houston, we still have a problem
 
-I have a function that works, but it's hacky -- way too hacky for me. I feel that text manipulation, especially in in a text editor, has to be a lot easier than having to split a string, map over a list, then rejoin that string.
+I have a function that works, but it's hacky -- way too hacky for me. I feel that text manipulation, /especially/ in in a text editor, has to be a lot easier than having to split a string, map over a list, then rejoin that string.
 
-Unfortunately, I don't think the [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Current-Buffer.html][documentation]] [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Excursions.html#Excursions][in]] [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Text-Lines.html#Text-Lines][Emacs]] is really up to par with building up a mental framework for how to programatically manipulate text. I had to do a [[http://ergoemacs.org/emacs/elisp_process_lines.html][lot]] of [[https://emacs.stackexchange.com/a/2193][googling]] to be able to get pointed in the right direction.
+Unfortunately, I find the [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Current-Buffer.html][documentation]] [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Excursions.html#Excursions][in]] [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Text-Lines.html#Text-Lines][Emacs]] is not really geared to building up a mental framework for programatically manipulating text. I had to do a [[http://ergoemacs.org/emacs/elisp_process_lines.html][lot]] of [[https://emacs.stackexchange.com/a/2193][googling]] to be able to get pointed in the right direction.
 
-I realize that I'm in kind of a unique spot though, most of Emacs' text manipulation is mean to be in place manipulation. But, I want to: copy a region/buffer, mutate some text, provide this text as a return value from a function, and not mutate or chang the current buffer. Emacs has all of the tools to do this and some are just easier to find then others.
+I realize that I am in unique spot though. Most of Emacs' text manipulation is meant to be in place. But, I want to: copy a region/buffer, mutate some text, provide this text as a return value from a function, and not mutate or chang the current buffer. Emacs has all of the tools to do this and some of these tools are just easier to find then others.
 
-After a lot of reading and thinking I've settled on a process: I want to copy the current region into a temporary buffer, loop over each line until we hit the end, at the beginning of each line insert "> ", and finally return the contents of this buffer once I've left the loop.[fn:1]
+After a lot of reading I've settled on a process: I want to copy the current region into a temporary buffer, loop over each line until we hit the end, at the beginning of each line insert "> ", and finally return the contents of this buffer once I am done everything else.[fn:1]
 
 #+BEGIN_SRC emacs-lisp
   (defun jb/slack-quote-region (region)
@@ -169,7 +171,7 @@ After a lot of reading and thinking I've settled on a process: I want to copy th
 
 [[./images/beautiful.gif]]
 
-This is a lot more idiomatic Emacs! To finish it off this leg of my journey, I can now add it to ~jb/send-region-to-slack-quotes~.
+This looks a lot more like idiomatic Emacs! To finish it off this leg of my journey, I just need to add it to ~jb/send-region-to-slack-quotes~.
 
 #+BEGIN_SRC emacs-lisp
   (defun jb/send-region-to-slack-quotes ()
@@ -179,28 +181,33 @@ This is a lot more idiomatic Emacs! To finish it off this leg of my journey, I c
                   (cl-loop for team in (list team)
                            append (with-slots (groups ims channels) team
                                     (append ims groups channels))))))
-      (slack-message-send-internal (jb/slack-quote-region (filter-buffer-substring (region-beginning) (region-end)))
+      (slack-message-send-internal (jb/slack-quote-region
+                                    (filter-buffer-substring
+                                     (region-beginning)
+                                     (region-end)))
                                    (oref room id)
                                    team)))
 #+END_SRC
 
 ** I've Brought My Towel
 #+BEGIN_QUOTE
-In the beginning, the Universe was created. This has made a lot of people very angry and been widely regarded as a bad move. - Douglas Adams
+In the beginning, the Universe was created. This has made a lot of people very angry and been widely regarded as a bad move.
+
+- Douglas Adams
 #+END_QUOTE
 
-Looking at the state of the code I've written so far, I'm not very happy with it. It's all very wet behind the ear code -- I think with a bit of forethought and a towel I can dry it up.
+I'm not happy with the code that I've written so far. I mean, yeah it works, but it's ugly and it's repetitive. It's all very wet behind the ear code -- I think with a bit of forethought and a big enough towel, I can dry it up.
 
 *** Like A Desert
-Instead of having to call a different function for each decoration I want to apply to a region, I can delegate this work to one function and let the use decide at run time what decoratioin they want. This is the perfect time to take advantage of [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Minibuffer-Completion.html][Emacs' completion framework]].
+Instead of having to call a different function for each decoration I want to apply to my region, I should be able to  delegate this work to one function and let the user decide at run time what decoratioin they want. This is the perfect time to take advantage of [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Minibuffer-Completion.html][Emacs' completion framework]].
 
-A simple example of how the ~completing-read~ function works is that: it takes in a prompt and a list of choices, it gives these choices to the user, and the user entered response is returned to the calling function.
+A simple example of how the ~completing-read~ function works is that: it takes in a prompt and a list of choices. ~completing-read~ gives a list choices to the user, and then returns the user's response to the calling function.
 
 #+BEGIN_SRC emacs-lisp
   (setq choices '("It's amazing" "It's awesome" "Better than Vim"))
   (completing-read "What do you think of Emacs?: " choices)
 #+END_SRC
-
+# here
 I've decided to take this a step further, I'm going to use an [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Association-Lists.html][alist]] as a key-value store. This alist is composed of text describing the decoration they want to apply and a lambda function that applies the transform to the region. I am taking advantage of the fact that when ~completing-read~ is passed an association list it takes the CAR of each item in the list, and presents those as the options for the user. Then, I can use ~assoc~ to find the first entry in our alist that matches the choice made by the user, and then apply ~funcall~ to the CDR of the chosen entry and region.
 #+BEGIN_SRC emacs-lisp
   (setq decorators '(("None" . (lambda (text) text)) ;; The identity function
