@@ -74,7 +74,7 @@ Or I want to have my text dress-up in some snappy quotes!
 ** Wait A Minute
 [[./images/why_isnt_it_working.gif]]
 
-Apparently, in [[https://daringfireball.net/projects/markdown/syntax#blockquote][Markdown]] you have to put "> " at the beginning of each line you want to say is a quote, and not sure at the beginning or surrounded like in a code block.
+So... in [[https://daringfireball.net/projects/markdown/syntax#blockquote][Markdown]] you have to put "> " at the beginning of *each* line you want to say is a quote.
 
 ** Houston We Have A Problem
 I've run into a problem, a big problem. I don't know how to iterate through text in a buffer. Sure I can copy it, copying is easy, but editing text while not also editing the buffer seems to be tricky.
