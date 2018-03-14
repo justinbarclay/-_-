@@ -115,7 +115,7 @@ No, not Space Oddity.
 
 As a beginner in elisp, I find interactive and programmatic text processing to be an oddity. I have built up an intuition on how to deal with string manipulation in other environments, however, that doesn't map well to the way Emacs thinks about manipulating text in buffers.
 
-My next guess is to try and split the buffer based on new-line...
+My next guess is to try to split the buffer based on new-line...
 
 #+BEGIN_SRC emacs-lisp
   (defun quote-region ()
