@@ -1,6 +1,6 @@
 * Outline
 
-When last we left our heroes they were in the deep woods of Emacs. After hacking at a few slack goblins, our heroes must decide how to proceed...
+When last we left our heroes they were in the deep woods of Emacs. After hacking at a few slack goblins; our heroes must decide how to proceed...
 
 [[https://codepen.io/emoarmy/pen/eMNmze][Can codepens be inlined?]]
 
@@ -149,11 +149,11 @@ Voila, we have a function that operates on a region by adding a quote marker to 
 
 ** Houston, we still have a problem
 
-I have a function that works, but it's hacky -- way too hacky for me. I feel that text manipulation, /especially/ in in a text editor, has to be a lot easier than having to split a string, map over a list, then rejoin that string.
+I have a function that works, but it's hacky -- way too hacky for me. I feel that text manipulation, /especially/ in a text editor, has to be a lot easier than having to split a string, map over a list, then rejoin that string.
 
 Unfortunately, I find the [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Current-Buffer.html][documentation]] [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Excursions.html#Excursions][in]] [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Text-Lines.html#Text-Lines][Emacs]] is not really geared to building up a mental framework for programmatically manipulating text. I had to do a [[http://ergoemacs.org/emacs/elisp_process_lines.html][lot]] of [[https://emacs.stackexchange.com/a/2193][googling]] to be able to get pointed in the right direction.
 
-I realize that I am in a unique spot though. Most of Emacs' text manipulation is meant to be in place. But, I want to: copy a region/buffer, mutate some text, provide this text as a return value from a function, and not mutate or change the current buffer. Emacs has all of the tools to do this and some of these tools are just easier to find than others.
+I realize that I am in a unique spot though. Most of Emacs' text manipulation is meant to be in place. But, I want to: copy a region/buffer, mutate some text, provide this text as a return value from a function, and not mutate or change the current buffer. Emacs has all the tools to do this and some of these tools are just easier to find than others.
 
 After a lot of reading I've settled on a process: I want to copy the current region into a temporary buffer, loop over each line until we hit the end, at the beginning of each line insert "> ", and finally return the contents of this buffer once I am done everything else.[fn:1]
 
@@ -193,13 +193,13 @@ This looks a lot more like idiomatic Emacs! To finish it off this leg of my jour
 #+BEGIN_QUOTE
 In the beginning, the Universe was created. This has made a lot of people very angry and been widely regarded as a bad move.
 
-- Douglas Adams
+-- Douglas Adams
 #+END_QUOTE
 
 I'm not happy with the code that I've written so far. I mean, yeah it works, but it's ugly and it's repetitive. It's all very wet behind the ear code -- I think with a bit of forethought and a big enough towel, I can dry it up.
 
 *** Like A Desert
-Instead of having to call a different function for each decoration I want to apply to my region, I should be able to  delegate this work to one function and let the user decide at run time what decoration they want. This is the perfect time to take advantage of [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Minibuffer-Completion.html][Emacs' completion framework]].
+Instead of having to call a different function for each decoration I want to apply to my region, I should be able to delegate this work to one function and let the user decide at run time what decoration they want. This is the perfect time to take advantage of [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Minibuffer-Completion.html][Emacs' completion framework]].
 
 A simple example of how the ~completing-read~ function works is that: it takes in a prompt and a list of choices. ~completing-read~ gives a list choices to the user and then returns the user's response to the calling function.
 
