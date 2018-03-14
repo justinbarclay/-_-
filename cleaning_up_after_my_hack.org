@@ -19,10 +19,10 @@ Before I look at your choice I want to quickly show you ~slack-select-room~ whic
 
 ~slack-select-room~ is a lot like the code I had previously used to choose where to post my message, ~slack-select-channel~, but this allows us to post in any slack room including channels, ims, and groups.
 
-** Back to our regularly scheduled program
+** Back To Our Regularly Scheduled Program
 You have chosen "clean up"! A brave choice indeed!
 
-** Previously on the X-Files...
+** Previously On The X-Files...
 [[./images/x-files-mulder-scully.jpg]]
 
 In my previous [[https://medium.com/@justincbarclay/my-descent-into-madness-hacking-emacs-to-send-text-to-slack-bc6cf3780129][post,]] I had figured out how to send any selected region in Emacs to Slack with it decorated as code.
@@ -147,7 +147,7 @@ Voila, we have a function that operates on a region by adding a quote marker to 
       "\n")))
 #+END_SRC
 
-** Houston, we still have a problem
+** Houston, We Still Have A Problem
 
 I have a function that works, but it's hacky -- way too hacky for me. I feel that text manipulation, /especially/ in a text editor, has to be a lot easier than having to split a string, map over a list, then rejoin that string.
 
@@ -189,7 +189,7 @@ This looks a lot more like idiomatic Emacs! To finish it off this leg of my jour
                                    team)))
 #+END_SRC
 
-** I've Brought My Towel
+** I Have My Towel
 #+BEGIN_QUOTE
 In the beginning, the Universe was created. This has made a lot of people very angry and been widely regarded as a bad move.
 
