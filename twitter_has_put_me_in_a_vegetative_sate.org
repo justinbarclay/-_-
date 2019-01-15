@@ -1,0 +1,45 @@
+* Like Gumby
+The power and flexibility that Emacs, and it's suite of packages, constantly amazes me. I've been a big fan of `org-mode` for a long time, it's a great in Emacs replacement for Markdown and a number of other document formats, thanks to pandoc. `org-mode` is a great place to practice [[https://www.offerzen.com/blog/literate-programming-empower-your-writing-with-emacs-org-mode][literate programming]], but it's also a great place to an interactive style of programming, like a REPL or a Jupyter Notebook.
+
+Lately, at work, I've been exploring a lot of Authenticated JSON APIs. Up until a couple of weeks ago, whenever I had to do this that would mean logging authenticating to the API using `curl` or `Postman`, copying the token and using it across sessions. Doing this in curl can be annoying, but `Postman` at least let's you set variables to use across the session.
+
+However, with: Emacs, `org-mode`, and [[https://github.com/alf/ob-restclient.el][ob-restclient]], we can automate process further and share are work with out coworkers. I mean, that is if our coworkers had good taste and used Emacs over Vim, or Atom, or VSCode.
+
+* Setup
+First off, let's define a simple function to quickly clear out the result blocks in the current org file
+#+BEGIN_SRC elisp
+  (defun jb/org-clear-results ()
+    (interactive)
+    (org-babel-remove-result-one-or-many 't))
+#+END_SRC
+
+Now, let's set that to an easy to use key
+#+BEGIN_SRC elisp
+  (unbind-key "C-c C-v C-c")
+  (bind-key "C-c C-v C-c" 'jb/org-clear-results)
+#+END_SRC
+
+
+* Demo
+
+Let's give our source block a name, `#+NAME: trefle`, so we can easily reference it throughout the rest of our notebook
+#+NAME: trefle
+#+BEGIN_SRC bash :results output
+  security find-generic-password -gws trefle.io
+#+END_SRC
+
+To import a variable from earlier in the file you can use `:var token=trefle` where :var token, specified that you what to insert a variable called token into the proceeding block and the contents of that variable a pull from a block by the name of `trefle`.
+#+NAME trefle-headers
+#+BEGIN_SRC elisp :var token=trefle
+(concat
+     "<<
+  Content-Type: application/json
+  Accept: application/json
+  Authorization: Bearer " token)
+#+END_SRC
+
+tj
+#+BEGIN_SRC restclient :var headers=trefle
+
+
+#+END_SRC
