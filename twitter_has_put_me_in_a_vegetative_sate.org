@@ -15,31 +15,82 @@ First off, let's define a simple function to quickly clear out the result blocks
 
 Now, let's set that to an easy to use key
 #+BEGIN_SRC elisp
-  (unbind-key "C-c C-v C-c")
-  (bind-key "C-c C-v C-c" 'jb/org-clear-results)
+  (global-unset-key "\C-c\C-v\C-c")
+  (global-set-key "\C-c\C-v\C-c" 'jb/org-clear-results)
 #+END_SRC
 
+We need a function to sanitize the response we get from restclient
+#+BEGIN_SRC elisp
+(defun sanitize-restclient-response (string)
+ (string-trim (replace-regexp-in-string "^#\\+BEGIN_SRC js\\|^#\\+END_SRC\\|^//[[:print:]]+" "" string)))
+#+END_SRC
 
+* Preamble
+I really like plants, and I love to learn random plant facts. So I am going to use [[https://trefle.io/reference][trefle.io]] API to tweet out facts about random plants.
 * Demo
-
-Let's give our source block a name, `#+NAME: trefle`, so we can easily reference it throughout the rest of our notebook
+Let's give our source block a name, `#+NAME: trefle`, so we can easily reference it throughout the rest of our notebook. I am using my Mac's keychain to store and retrieve an access token I have stored for trefle.io.
 #+NAME: trefle
 #+BEGIN_SRC bash :results output
   security find-generic-password -gws trefle.io
 #+END_SRC
 
-To import a variable from earlier in the file you can use `:var token=trefle` where :var token, specified that you what to insert a variable called token into the proceeding block and the contents of that variable a pull from a block by the name of `trefle`.
-#+NAME trefle-headers
+To import a variable from earlier in the file you can use `:var token=trefle` where :var token, specified that you what to insert a variable called token into the proceeding block and the contents of that variable a pull from a block by the name of `trefle`. Now we just need to build the HTTP headers we're going to use for our interaction with trefle.
+#+NAME: trefle-headers
 #+BEGIN_SRC elisp :var token=trefle
-(concat
+  (concat
      "<<
   Content-Type: application/json
   Accept: application/json
   Authorization: Bearer " token)
 #+END_SRC
 
-tj
-#+BEGIN_SRC restclient :var headers=trefle
+As of the last time I looked, trefle.io has over 4000 pages of plants, so we want to get a random plant off of a random page. So to start, we'll generate a page number from 0 to 4000...
+#+NAME: plants
+#+BEGIN_SRC restclient :var headers=trefle-headers  :results value drawer
+  #
+  :page := (random 4000)
+  GET https://trefle.io/api/plants?page=:page
+  :headers
+  #
+#+END_SRC
+
+Before we can do anything with the output we need to clean it up, restclient likes to have all the headers for the response at the bottom of the buffer, so we need to filter those out of the response.
+#+NAME: sanitized-response
+#+BEGIN_SRC elisp :var response=plants
+(sanitize-restclient-response response)
+#+END_SRC
+
+Now we could use elisp, but everyone has NodeJS installed and NodeJS is pretty much built for parsing JSON, so it only makes sense to use that. So we'll grab a random plant from the sanitized results and return it's ID.
+
+#+NAME: plant-name
+#+BEGIN_SRC js :var plants=sanitized-response :results value drawer
+  let index = Math.floor(Math.random() * 30);
+  return JSON.parse(plants)[index].scientific_name;
+#+END_SRC
+
+Now, I need to get my Google API key, for this I've been lazy and have just been storing it as an ENV var.
+#+NAME: google-api-key
+#+BEGIN_SRC bash
+echo "AIzaSyBt6r9cLqILZV_i4gdeFjLtufDnCJd_G4I"
+#+END_SRC
+
+Now that we've got a plant name, let's get an image to use to give an example of the plant.
+
+#+NAME: google-images
+#+BEGIN_SRC restclient :var api-key=google-api-key plant-name=plant-name
+  GET https://content.googleapis.com/customsearch/v1?cx=009341007550343915479%3Afg_hsgzltxw&q=:plant-name&searchType=image&key=:api-key
+#+END_SRC
+
+Now much like our search for a plant name, we need to clean up the response from google API so it's easily parsable as JSON.
+#+NAME: flower-images
+#+BEGIN_SRC elisp :var google-images=google-images
+  (sanitize-restclient-response google-images)
+#+END_SRC
 
 
+Now that we have a nice list of plants, let's play google roulette and use the first image from the search
+
+#+NAME: plant-image
+#+BEGIN_SRC js :var plant_images=flower-images :results value drawer
+  return JSON.parse(plant_images).items[0].link
 #+END_SRC
