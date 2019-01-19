@@ -25,6 +25,41 @@ We need a function to sanitize the response we get from restclient
  (string-trim (replace-regexp-in-string "^#\\+BEGIN_SRC js\\|^#\\+END_SRC\\|^//[[:print:]]+" "" string)))
 #+END_SRC
 
+Here's a couple of functions we're going to use to help us parse a response from Google's API.
+#+BEGIN_SRC elisp
+  (defun parse-ml-response (responses)
+    "Extracts A Google AI response down to a list of label annotations"
+    (let* ((json-response (json-read-from-string responses))
+           (label-annotations  (cdr
+                               (assoc 'labelAnnotations
+                                      (elt
+                                       (cdr (assoc 'responses json-response))
+                                       0)))))
+      label-annotations))
+
+  (defun contains-description-p (annotations descriptions)
+    "Checks to see if any of the items in the sequence ANNOTATIONS has a description that matches one of the items in DESCRIPTIONS"
+    (let ((annotated-descriptions (mapcar (lambda (item) (cdr (assoc 'description item))) annotations)))
+      (reduce (lambda (predicate description)
+                (if predicate
+                    predicate
+                  (if (member description descriptions)
+                      't
+                    nil)))
+              annotated-descriptions
+              :initial-value nil)))
+#+END_SRC
+
+Finally we're going to want some code to run a specific source code block
+#+BEGIN_SRC elisp
+  (defun run-org-block ()
+    (save-excursion
+      (goto-char
+       (org-babel-find-named-block
+        (completing-read "Code Block: " (org-babel-src-block-names))))
+      (org-babel-execute-src-block-maybe)))
+#+END_SRC
+
 * Preamble
 I really like plants, and I love to learn random plant facts. So I am going to use [[https://trefle.io/reference][trefle.io]] API to tweet out facts about random plants.
 * Demo
@@ -71,7 +106,7 @@ Now we could use elisp, but everyone has NodeJS installed and NodeJS is pretty m
 Now, I need to get my Google API key, for this I've been lazy and have just been storing it as an ENV var.
 #+NAME: google-api-key
 #+BEGIN_SRC bash
-echo "AIzaSyBt6r9cLqILZV_i4gdeFjLtufDnCJd_G4I"
+  echo $GOOGLE_API_KEY
 #+END_SRC
 
 Now that we've got a plant name, let's get an image to use to give an example of the plant.
@@ -87,10 +122,238 @@ Now much like our search for a plant name, we need to clean up the response from
   (sanitize-restclient-response google-images)
 #+END_SRC
 
-
-Now that we have a nice list of plants, let's play google roulette and use the first image from the search
+Now that we have a nice list of plants, let's play google roulette and use the first image from the search.
 
 #+NAME: plant-image
 #+BEGIN_SRC js :var plant_images=flower-images :results value drawer
-  return JSON.parse(plant_images).items[0].link
+  return "" + JSON.parse(plant_images).items[0].link
 #+END_SRC
+
+But how can we be sure to trust Google? We don't have time to make sure all of our code does what it is actually supposed to do. In stead, we'll use Machine Learning provided by the fabulous Google to ensure our image is what we expect it to be.
+#+NAME: plant-ml-results
+#+BEGIN_SRC restclient :var api-key=google-api-key plant-image=plant-image
+POST https://vision.googleapis.com/v1/images:annotate?key=:api-key
+{
+  "requests":[
+    {
+      "image":{
+        "source":{
+          "imageUri":
+           :plant-image
+        }
+      },
+      "features":[
+        {
+          "type":"LABEL_DETECTION",
+          "maxResults":3
+        }
+      ]
+    }
+  ]
+  }
+#+END_SRC
+
+Again some data clean up
+#+NAME: sanitized-ml-results
+#+BEGIN_SRC elisp :var response=plant-ml-results
+(sanitize-restclient-response response)
+#+END_SRC
+
+#+NAME: sanitized-ml-results
+#+begin_example
+{
+  "responses": [
+    {
+      "labelAnnotations": [
+        {
+          "mid": "/m/04_tb",
+          "description": "map",
+          "score": 0.9684097,
+          "topicality": 0.9684097
+        },
+        {
+          "mid": "/m/03scnj",
+          "description": "line",
+          "score": 0.734654,
+          "topicality": 0.734654
+        },
+        {
+          "mid": "/m/07j7r",
+          "description": "tree",
+          "score": 0.7276011,
+          "topicality": 0.7276011
+        }
+      ]
+    }
+  ]
+}
+#+end_example
+
+Let's check to see if the first three descriptors come back as plant, tree, or a flower
+#+NAME: image-is-plant-p
+#+BEGIN_SRC elisp :var response=sanitized-ml-results
+  (contains-description-p
+   (parse-ml-response response)
+   '("plant" "tree" "flower"))
+#+END_SRC
+
+We need one last piece of information before we can demonstrate our love of Plants to the world, someone to tweet at. Let's ask ourselves for some input.
+#+NAME: twitter-handle
+#+BEGIN_SRC elisp
+(read-string "What is the twitter handle of someone you want to tweet? ")
+#+END_SRC
+
+Let's get all the keys we need to interact with the twitter api.
+#+NAME: twitter-consumer-key
+#+BEGIN_SRC sh
+echo $TWITTER_CONSUMER_KEY
+#+END_SRC
+
+#+NAME: twitter-consumer-secret
+#+BEGIN_SRC sh
+echo $TWITTER_CONSUMER_SECRET
+#+END_SRC
+
+#+NAME: twitter-access-token
+#+BEGIN_SRC sh
+echo $TWITTER_ACCESS_TOKEN
+#+END_SRC
+
+#+NAME: twitter-access-secret
+#+BEGIN_SRC sh
+echo $TWITTER_ACCESS_SECRET
+#+END_SRC
+
+
+# First we'll need to do some prep work before we can authenticate with twitter. In [[https://developer.twitter.com/en/docs/basics/authentication/overview/application-only#step-1-encode-consumer-key-and-secret][Step 1]] of the Twitter tutorial for authentication, we need to encode our tokens according to RFC 1738, join them with a colon, and then base64 encode the result. In the snippet below we're going to use an elisp function that follows RFC 1738, so we don't have to do it manually.
+
+# #+NAME: twitter-auth-header
+# #+BEGIN_SRC elisp :var consumer-key=twitter-consumer-key consumer-secret=twitter-consumer-secret
+#   (defun build-bearer-token ()
+#     (replace-regexp-in-string "\n" ""
+#     (base64-encode-string
+#      (concat
+#       (url-hexify-string consumer-key)
+#       ":"
+#       (url-hexify-string consumer-secret)))))
+
+#   (concat
+#    "<<
+#   Content-Type: application/x-www-form-urlencoded;charset=UTF-8
+#   Authorization: Basic "
+#    (string-trim
+#     (build-bearer-token)))
+# #+END_SRC
+
+# Great now, that we've got our bearer token, on to [[https://developer.twitter.com/en/docs/basics/authentication/overview/application-only#step-2-obtain-a-bearer-token][Step 2]].
+# #+NAME: twitter-bearer-token
+# #+BEGIN_SRC restclient :var auth-headers=twitter-auth-header
+#   #
+#   POST https://api.twitter.com/oauth2/token
+#   :auth-headers
+#   grant_type=client_credentials
+# #+END_SRC
+
+# Now that we have a token we need to clean it up so we can parse it else where...
+# #+NAME: sanitize-twitter-token
+# #+BEGIN_SRC elisp :var response=twitter-bearer-token
+#   (sanitize-restclient-response response)
+# #+END_SRC
+
+# #+NAME: parsed-twitter-token
+# #+BEGIN_SRC js :var response=sanitize-twitter-token :results drawer
+#   return JSON.parse(response)["access_token"];
+# #+END_SRC
+
+* Twitter
+Now that we have all the information: a plant name, an image of the plant, and someone to tweet at. Let's share with them our love of all things Plantae.
+#+BEGIN_SRC restclient
+  #
+  POST https://api.twitter.com/1.1/statuses/update.json?
+  oauth_consumer_key: BdTNIdHB9YfGmXpJFz56LjzT6
+  oauth_token: 120676797-uF9lTITf9xmyQrcQ29OoMUidAOjN8aU8N0eUWCFw
+  Content-Type: application/json
+#+END_SRC
+
+Ruby's a fun language with a pretty full featured STL, let's use it to generate our Nonce
+#+NAME: nonce
+#+BEGIN_SRC ruby
+require 'securerandom'
+
+nonce = SecureRandom.uuid
+nonce.gsub(/\W/, "")
+#+END_SRC
+
+We need the current time of our request
+#+NAME: oauth-time
+#+BEGIN_SRC elisp
+  (format-time-string "%s")
+#+END_SRC
+
+We need to define the headers that we need for this request.
+#+NAME: twitter-headers
+#+BEGIN_SRC elisp
+(list
+ (cons "Content-Type" "application/json")
+#+END_SRC
+
+Next up, is the oauth specific headers needed for the request
+#+NAME: oauth-headers
+#+BEGIN_SRC elisp :var nonce=nonce consumer-key=twitter-consumer-key access-token=twitter-access-token oauth-time=oauth-time
+  (list
+   (cons "oauth_consumer_key" consumer-key)
+   (cons "oauth_nonce" nonce)
+   (cons "oauth_signature_method" "HMAC-SHA1")
+   (cons "oauth_timestamp" oauth-time)
+   (cons "oauth_token" access-token)
+   (cons "oauth_version" "1.0"))
+#+END_SRC
+
+And finally, the body of our request, here we can keep it simple, just a status and an attachment.
+#+NAME: twitter-body
+#+BEGIN_SRC elisp :var plant_name=plant-name plant_image=plant-image twitter_handle=twitter-handle
+(list
+   (cons "status" (concat "" twitter_handle " " plant_name ""))
+   (cons "attachment_url" (print plant_image)))
+#+END_SRC
+
+Let's define a function for twitter signature generation
+#+BEGIN_SRC elisp
+  (defun twitter-signature-string (method base params)
+    (let ((sorted-params
+           (sort params
+                 (lambda (first second)
+                   (string< (car first) (car second))))))
+      (concat
+       method
+       "&"
+       base
+       "&"
+       (mapconcat
+        (lambda (entry)
+          (let ((key (car entry))
+                (value (cdr entry)))
+            (concat key
+                    "="
+                    value)))
+        sorted-params
+        "&"))))
+#+END_SRC
+
+#+NAME: singature-string
+#+BEGIN_SRC elisp :var body=twitter-body oauth-headers=oauth-headers headers=twitter-headers
+  (url-hexify-string (twitter-signature-string "POST" "http://www.google.com" (append body oauth-headers headers)))
+#+END_SRC
+
+#+BEGIN_SRC restclient :var twitter-consumer-key=twitter-consumer-key twitter-access-token=twitter-access-token
+  #
+  POST https://api.twitter.com/1.1/statuses/update.json?stats='hello world'
+  Authorization: OAuth oauth_consumer_key="BdTNIdHB9YfGmXpJFz56LjzT6", oauth_token="120676797-uF9lTITf9xmyQrcQ29OoMUidAOjN8aU8N0eUWCFw", oauth_version="1.0"
+  Content-Type: application/json
+#+END_SRC
+
+
+* References
+1. https://developer.twitter.com/en/docs/basics/authentication/overview/application-only
+2. https://cloud.google.com/vision/docs/request
+3. https://developer.twitter.com/en/docs/tweets/post-and-engage/api-reference/post-statuses-update.html
