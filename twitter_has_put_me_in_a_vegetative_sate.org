@@ -203,28 +203,6 @@ We need one last piece of information before we can demonstrate our love of Plan
 (read-string "What is the twitter handle of someone you want to tweet? ")
 #+END_SRC
 
-Let's get all the keys we need to interact with the twitter api.
-#+NAME: twitter-consumer-key
-#+BEGIN_SRC sh
-echo $TWITTER_CONSUMER_KEY
-#+END_SRC
-
-#+NAME: twitter-consumer-secret
-#+BEGIN_SRC sh
-echo $TWITTER_CONSUMER_SECRET
-#+END_SRC
-
-#+NAME: twitter-access-token
-#+BEGIN_SRC sh
-echo $TWITTER_ACCESS_TOKEN
-#+END_SRC
-
-#+NAME: twitter-access-secret
-#+BEGIN_SRC sh
-echo $TWITTER_ACCESS_SECRET
-#+END_SRC
-
-
 # First we'll need to do some prep work before we can authenticate with twitter. In [[https://developer.twitter.com/en/docs/basics/authentication/overview/application-only#step-1-encode-consumer-key-and-secret][Step 1]] of the Twitter tutorial for authentication, we need to encode our tokens according to RFC 1738, join them with a colon, and then base64 encode the result. In the snippet below we're going to use an elisp function that follows RFC 1738, so we don't have to do it manually.
 
 # #+NAME: twitter-auth-header
@@ -266,16 +244,110 @@ echo $TWITTER_ACCESS_SECRET
 # #+END_SRC
 
 * Twitter
-Now that we have all the information: a plant name, an image of the plant, and someone to tweet at. Let's share with them our love of all things Plantae.
-#+BEGIN_SRC restclient
-  #
-  POST https://api.twitter.com/1.1/statuses/update.json?
-  oauth_consumer_key: BdTNIdHB9YfGmXpJFz56LjzT6
-  oauth_token: 120676797-uF9lTITf9xmyQrcQ29OoMUidAOjN8aU8N0eUWCFw
-  Content-Type: application/json
+** Helper functions
+#+BEGIN_SRC elisp
+  (defun twitter-signing-key (consumer-secret token-secret)
+    "Creates a signing key by combining the consumer-secret and the token secret and percent encoding the result"
+    (concat
+     (url-encode-url
+      consumer-secret)
+     "&"
+     (url-encode-url
+      token-secret)))
+
+  (defun twitter-signature-string (method base params)
+    (let ((sorted-params
+           (sort params
+                 (lambda (first second)
+                   (string< (car first) (car second))))))
+      (concat
+       method
+       "&"
+       (url-hexify-string base)
+       "&"
+       (url-hexify-string
+        (mapconcat
+         (lambda (entry)
+           (let ((key (car entry))
+                 (value (cdr entry)))
+             (concat (url-hexify-string key)
+                     "="
+                     (url-hexify-string value))))
+         sorted-params
+         "&")))))
+
+  (defun build-twitter-header-string (header oauth-headers)
+    "Takes in a list of cons cells that represent HTTP headers, as well as the information needed to define the OAUTH response for a Twitter request, and build a restclient style header string"
+    (concat
+     "<<\n"
+     (mapconcat
+      (lambda (entry)
+        (let ((key (car entry))
+              (value (cdr entry)))
+          (concat
+           key
+           ": "
+           value
+           " ")))
+      header
+      "")
+     "\nAuthorization: OAuth "
+     (string-trim-right
+      (mapconcat
+       (lambda (entry)
+         (let ((key (car entry))
+               (value (cdr entry)))
+           (concat
+            key
+            "="
+            "\"" value "\""
+            ",")))
+       oauth-headers
+       " ")
+      ",")))
 #+END_SRC
 
-Ruby's a fun language with a pretty full featured STL, let's use it to generate our Nonce
+** Shhh it's Secret
+Let's get all the keys we need to interact with the twitter api.
+#+NAME: twitter-consumer-key
+#+BEGIN_SRC sh
+echo $TWITTER_CONSUMER_KEY
+#+END_SRC
+
+#+NAME: twitter-consumer-secret
+#+BEGIN_SRC sh
+echo $TWITTER_CONSUMER_SECRET
+#+END_SRC
+
+#+NAME: twitter-access-token
+#+BEGIN_SRC sh
+echo $TWITTER_ACCESS_TOKEN
+#+END_SRC
+
+#+NAME: twitter-access-secret
+#+BEGIN_SRC sh
+echo $TWITTER_ACCESS_SECRET
+#+END_SRC
+
+** Functions stuff
+*** Let's generating content
+#+NAME: twitter-body
+#+BEGIN_SRC elisp :var plant_name=plant-name plant_image=plant-image twitter_handle=twitter-handle
+  (list
+   (cons "status" (concat "" twitter_handle " " plant_name " " (replace-regexp-in-string "'" "" plant_image))))
+   ;; (cons "attachment_url" plant_image))
+#+END_SRC
+
+#+NAME: twitter-body-generated
+#+BEGIN_SRC elisp
+ (list (cons "status" "@spiralganglion 'Lathyrus laetivirens' https://www.pacificbulbsociety.org/pbswiki/files/Alpinia/Alpinia_carolinensis1NN.jpg"))
+#+END_SRC
+
+*** Let's work on Auth
+**** Step 1 Header creation and Signing the Header
+To start we need to autogenerate a few pieces of information; a nonce, a none a timestamp and the signature.
+
+Emacs's doesn't really have a built in crypto library and Ruby is  a fun language with a pretty full featured STL, let's use it to generate our Nonce
 #+NAME: nonce
 #+BEGIN_SRC ruby
 require 'securerandom'
@@ -294,64 +366,150 @@ We need to define the headers that we need for this request.
 #+NAME: twitter-headers
 #+BEGIN_SRC elisp
 (list
- (cons "Content-Type" "application/json")
+ (cons "Content-Type" "application/x-www-form-urlencoded"))
+#+END_SRC
+
+Surprisingly, Emacs doesn't really have the best built in crypto support, so we'll need to let another language do the heavy lifting. I like Node and Node has a decent crypto library built into it.
+#+NAME: createSignature
+#+BEGIN_SRC js :var signature_string="" :var key=""
+  let crypto = require('crypto')
+
+  let createSignature = (key, text) => {
+    return crypto.createHmac('sha1', key).update(signature_string).digest('bindary');
+  }
+
+  return createSignature(key, signature_string).toString('base64');
+#+END_SRC
+
+
+Now before we can sign anything, and in the next block we need to sign things, we need to create a signing key.
+#+NAME: signing-key
+#+BEGIN_SRC elisp :var consumer-secret=twitter-consumer-secret token-secret=twitter-access-secret
+  (twitter-signing-key consumer-secret token-secret)
 #+END_SRC
 
 Next up, is the oauth specific headers needed for the request
-#+NAME: oauth-headers
-#+BEGIN_SRC elisp :var nonce=nonce consumer-key=twitter-consumer-key access-token=twitter-access-token oauth-time=oauth-time
-  (list
-   (cons "oauth_consumer_key" consumer-key)
-   (cons "oauth_nonce" nonce)
-   (cons "oauth_signature_method" "HMAC-SHA1")
-   (cons "oauth_timestamp" oauth-time)
-   (cons "oauth_token" access-token)
-   (cons "oauth_version" "1.0"))
+#+NAME: twitter-oauth-headers
+#+BEGIN_SRC elisp :var nonce=nonce consumer-key=twitter-consumer-key access-token=twitter-access-token oauth-time=oauth-time body=twitter-body-generated signing-key=signing-key
+  (let*
+      ((twitter-oauth-headers
+        (list
+         (cons "oauth_consumer_key" consumer-key)
+         (cons "oauth_nonce" nonce)
+         (cons "oauth_signature_method" "HMAC-SHA1")
+         (cons "oauth_timestamp" oauth-time)
+         (cons "oauth_token" access-token)
+         (cons "oauth_version" "1.0")))
+       (signature-string
+        (twitter-signature-string "POST"
+                                  "https://api.twitter.com/1.1/statuses/update.json"
+                                  (append twitter-oauth-headers body)))
+       (signature
+        (org-sbe createSignature (signature_string (eval signature-string)) (key (eval signing-key)))))
+    (message "%s" signature-string)
+    (append twitter-oauth-headers (list (cons "oauth_signature"
+                                              (url-hexify-string signature)))))
 #+END_SRC
 
-And finally, the body of our request, here we can keep it simple, just a status and an attachment.
-#+NAME: twitter-body
-#+BEGIN_SRC elisp :var plant_name=plant-name plant_image=plant-image twitter_handle=twitter-handle
-(list
-   (cons "status" (concat "" twitter_handle " " plant_name ""))
-   (cons "attachment_url" (print plant_image)))
+TEST
+#+BEGIN_SRC elisp :var nonce=nonce consumer-key=twitter-consumer-key access-token=twitter-access-token oauth-time=oauth-time body=twitter-body-generated signing-key=signing-key
+
+  (defvar twitter-oauth-headersz
+    (list
+     (cons "oauth_consumer_key" "xvz1evFS4wEEPTGEFPHBog")
+     (cons "oauth_nonce" "kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg")
+     (cons "oauth_signature_method" "HMAC-SHA1")
+     (cons "oauth_timestamp" "1318622958")
+     (cons "oauth_token" "370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb")
+     (cons "oauth_version" "1.0")))
+
+  (defvar signature-string
+    (twitter-signature-string "POST"
+                              "https://api.twitter.com/1.1/statuses/update.json"
+                              (append twitter-oauth-headersz (list (cons "include_entities" "true")
+                                                                  (cons "status" "Hello Ladies + Gentlemen, a signed OAuth request!")))))
+
+  ;; (append twitter-oauth-headers (list (cons "oauth_signature"
+  ;;                                           (base64-encode-string
+  ;;                                            (org-sbe createSignature (signature_string (eval signature-string)) (key (eval signing-key)))))))
+  (org-sbe createSignature (signature_string (eval signature-string)) (key \"kAcSOqF21Fu85e7zjz7ZN2U4ZRhfV3WpwPAoE3Z7kBw&LswwdoUaIvS8ltyTt5jkRh4J50vUPVVHtR2YPi5kE\"))
 #+END_SRC
 
-Let's define a function for twitter signature generation
+test2
 #+BEGIN_SRC elisp
-  (defun twitter-signature-string (method base params)
-    (let ((sorted-params
-           (sort params
-                 (lambda (first second)
-                   (string< (car first) (car second))))))
-      (concat
-       method
-       "&"
-       base
-       "&"
-       (mapconcat
-        (lambda (entry)
-          (let ((key (car entry))
-                (value (cdr entry)))
-            (concat key
-                    "="
-                    value)))
-        sorted-params
-        "&"))))
+  (list
+   (cons "oauth_consumer_key" "BdTNIdHB9YfGmXpJFz56LjzT6")
+   (cons "oauth_nonce" "WXqelicoLGqOvrOXCgly96YfRbbmde2DZ1Xbjaj38")
+   (cons "oauth_signature_method" "HMAC-SHA1")
+   (cons "oauth_timestamp" "1547977333")
+   (cons "oauth_token" "120676797-tch2TOWDlhE9yespy8Hg95INFUk7MSuPExdARC6w")
+   (cons "oauth_version" "1.0"))
+
+  (let*
+      ((twitter-oauth-headers
+        (list
+         (cons "oauth_consumer_key" "BdTNIdHB9YfGmXpJFz56LjzT6")
+         (cons "oauth_nonce" "d6238deb92664ee58312aae755382e6f")
+         (cons "oauth_signature_method" "HMAC-SHA1")
+         (cons "oauth_timestamp" "1548047121")
+         (cons "oauth_token" "120676797-tch2TOWDlhE9yespy8Hg95INFUk7MSuPExdARC6w")
+         (cons "oauth_version" "1.0")))
+       (body (list (cons "status" "\"@spiralganglion 'Scorzonera turkestanica'\"")))
+       (signing-key (twitter-signing-key  "A2Mk8rciWDXWokqB7ZfzfEtI7Z4MwYi3rEJ8s7RhVoq1xYcjLm" "GrWLOZo2ZG3DqaY4eAp3thgAaG3uc3nv6xbySQGT2as9G"))
+       (signature-string
+        (twitter-signature-string "POST"
+                                  "https://api.twitter.com/1.1/statuses/update.json/"
+                                  (append twitter-oauth-headers body)))
+       (signature
+        (org-sbe createSignature (signature_string (eval signature-string)) (key (eval signing-key)))))
+       (string= "b53zL0C4Y0CLJKKGbHfzl3741Wk%3D"
+                signature)
+       (append twitter-oauth-headers (list (cons "oauth_signature"
+                                                 signature))))
 #+END_SRC
 
-#+NAME: singature-string
-#+BEGIN_SRC elisp :var body=twitter-body oauth-headers=oauth-headers headers=twitter-headers
-  (url-hexify-string (twitter-signature-string "POST" "http://www.google.com" (append body oauth-headers headers)))
+Now we need to build our HTTP headers for our request
+#+NAME: twitter-restclient-headers
+#+BEGIN_SRC elisp :var header=twitter-headers twitter-oauth-headers=twitter-oauth-headers
+  (build-twitter-header-string header (sort twitter-oauth-headers
+                                            (lambda (first second)
+                                              (string< (car first) (car second)))))
 #+END_SRC
 
-#+BEGIN_SRC restclient :var twitter-consumer-key=twitter-consumer-key twitter-access-token=twitter-access-token
+We need to encode our body as a JSON string to work as a REST client
+#+NAME: twitter-json-body
+#+BEGIN_SRC elisp :var twitter-body=twitter-body-generated
+  ;;(json-encode twitter-body)
+  ;; (concat
+  ;;  ""
+  ;;  (mapconcat
+  ;;   (lambda (entry)
+  ;;     (concat (car entry) "=" (url-hexify-string (cdr entry))))
+  ;;   twitter-body
+  ;;   "&")
+  ;;  "")
+  (setq twitter-thing (concat
+                       ""
+                       (mapconcat
+                        (lambda (entry)
+                          (concat (car entry) "=" (url-hexify-string (cdr entry))))
+                        twitter-body
+                        "&")
+                       ""))
+twitter-thing
+#+END_SRC
+
+#+NAME: twitter-urlz
+#+BEGIN_SRC elisp :var twitter-json-body=twitter-json-body
+(concat "https://api.twitter.com/1.1/statuses/update.json?" twitter-json-body)
+#+END_SRC
+
+#+BEGIN_SRC restclient :var twitter-headers=twitter-restclient-headers twitter-body=twitter-json-body
   #
-  POST https://api.twitter.com/1.1/statuses/update.json?stats='hello world'
-  Authorization: OAuth oauth_consumer_key="BdTNIdHB9YfGmXpJFz56LjzT6", oauth_token="120676797-uF9lTITf9xmyQrcQ29OoMUidAOjN8aU8N0eUWCFw", oauth_version="1.0"
-  Content-Type: application/json
+  :body := (concat twitter-thing)
+  POST https://api.twitter.com/1.1/statuses/update.json?:body
+  :twitter-headers
 #+END_SRC
-
 
 * References
 1. https://developer.twitter.com/en/docs/basics/authentication/overview/application-only
