@@ -1,11 +1,54 @@
-* Like Gumby
+* Twitter has put me in a vegetative state
+** Like Gumby
+
 The power and flexibility that Emacs, and it's suite of packages, constantly amazes me. I've been a big fan of `org-mode` for a long time, it's a great in Emacs replacement for Markdown and a number of other document formats, thanks to pandoc. `org-mode` is a great place to practice [[https://www.offerzen.com/blog/literate-programming-empower-your-writing-with-emacs-org-mode][literate programming]], but it's also a great place to an interactive style of programming, like a REPL or a Jupyter Notebook.
 
-Lately, at work, I've been exploring a lot of Authenticated JSON APIs. Up until a couple of weeks ago, whenever I had to do this that would mean logging authenticating to the API using `curl` or `Postman`, copying the token and using it across sessions. Doing this in curl can be annoying, but `Postman` at least let's you set variables to use across the session.
+Lately, I've spent a lot of time exploring web APIs. I've tried a several tools over the years: Postman - back when it was a chrome extension, Curl, and HTTTPie. They were all, all right to get the job done, but they all ended up missing some feature or some UX. That's when I found [[https://github.com/pashky/restclient.el][restclient]], a package for Emacs with a `curl` like `DSL`.
 
-However, with: Emacs, `org-mode`, and [[https://github.com/alf/ob-restclient.el][ob-restclient]], we can automate process further and share are work with out coworkers. I mean, that is if our coworkers had good taste and used Emacs over Vim, or Atom, or VSCode.
+#+BEGIN_SRC restclient
+  // Here we will post our base64 encoded application token to get bearer token
+  POST https://api.twitter.com/oauth2/token?grant_type=client_credentials
+  Authorization: Basic eHZ6MWV2RlM0d0VFUFRHRUZQSEJvZzpMOHFxOVBaeVJnNmllS0dFS2hab2xHQzB2SldMdzhpRUo4OERSZHlPZw==
+  Content-Type: application/x-www-form-urlencoded;charset=UTF-8
+#+END_SRC
 
-* Setup
+#+RESULTS:
+#+BEGIN_SRC js
+{
+  "token_type": "bearer",
+  "access_token": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA%2FAAAAAAAAAAAAAAAAAAAA%3DAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+}
+// POST https://api.twitter.com/oauth2/token?grant_type=client_credentials
+// HTTP/1.1 200 OK
+// cache-control: no-cache, no-store, must-revalidate, pre-check=0, post-check=0
+// content-disposition: attachment; filename=json.json
+// content-length: 155
+// content-type: application/json;charset=utf-8
+// date: Thu, 24 Jan 2019 05:54:09 GMT
+// expires: Tue, 31 Mar 1981 05:00:00 GMT
+// last-modified: Thu, 24 Jan 2019 05:54:09 GMT
+// ml: S
+// pragma: no-cache
+// server: tsa_a
+// status: 200 OK
+// strict-transport-security: max-age=631138519
+// x-connection-hash: b93d89db0ee8f4ea90991c99c8d58449
+// x-content-type-options: nosniff
+// x-frame-options: DENY
+// x-response-time: 20
+// x-transaction: 005403e60014e9ee
+// x-twitter-response-tags: BouncerCompliant
+// x-ua-compatible: IE=edge,chrome=1
+// x-xss-protection: 1; mode=block; report=https://twitter.com/i/xss_report
+// Request duration: 0.079710s
+#+END_SRC
+
+
+- However when I'm exploring APIs, first or third parties, I do it in a much more interactive manor: I'll take try stuff, I'll take notes, I'll cluster my API calls, I'll pre or post process the data. For me, this is a practice that lends it self a [[https://hub.mybinder.org/user/binder-examples-julia-python-h6xqlrbg/notebooks/julia.ipynb][notebook]] style of development.
+
+- However, as an Emascist `org-mode`, and [[https://github.com/alf/ob-restclient.el][ob-restclient]], we can automate process further and share are work with out coworkers. I mean, that is if our coworkers had good taste and used Emacs over Vim, or Atom, or VSCode.
+
+** Setup
 First off, let's define a simple function to quickly clear out the result blocks in the current org file
 #+BEGIN_SRC elisp
   (defun jb/org-clear-results ()
@@ -60,9 +103,9 @@ Finally we're going to want some code to run a specific source code block
       (org-babel-execute-src-block-maybe)))
 #+END_SRC
 
-* Preamble
+** Preamble
 I really like plants, and I love to learn random plant facts. So I am going to use [[https://trefle.io/reference][trefle.io]] API to tweet out facts about random plants.
-* Demo
+** Demo
 Let's give our source block a name, `#+NAME: trefle`, so we can easily reference it throughout the rest of our notebook. I am using my Mac's keychain to store and retrieve an access token I have stored for trefle.io.
 #+NAME: trefle
 #+BEGIN_SRC bash :results output
@@ -243,8 +286,8 @@ We need one last piece of information before we can demonstrate our love of Plan
 #   return JSON.parse(response)["access_token"];
 # #+END_SRC
 
-* Twitter
-** Helper functions
+** Twitter
+*** Helper functions
 #+BEGIN_SRC elisp
   (defun twitter-signing-key (consumer-secret token-secret)
     "Creates a signing key by combining the consumer-secret and the token secret and percent encoding the result"
@@ -307,7 +350,7 @@ We need one last piece of information before we can demonstrate our love of Plan
       ",")))
 #+END_SRC
 
-** Shhh it's Secret
+*** Shhh it's Secret
 Let's get all the keys we need to interact with the twitter api.
 #+NAME: twitter-consumer-key
 #+BEGIN_SRC sh
@@ -329,13 +372,13 @@ echo $TWITTER_ACCESS_TOKEN
 echo $TWITTER_ACCESS_SECRET
 #+END_SRC
 
-** Functions stuff
-*** Let's generating content
-#+NAME: twitter-body
+*** Functions stuff
+**** Let's generating content
+#+NAME: xtwitter-body
 #+BEGIN_SRC elisp :var plant_name=plant-name plant_image=plant-image twitter_handle=twitter-handle
-  (list
-   (cons "status" (concat "" twitter_handle " " plant_name " " (replace-regexp-in-string "'" "" plant_image))))
-   ;; (cons "attachment_url" plant_image))
+  (setq twitter-body
+   (list
+    (cons "status" (concat "" twitter_handle " " plant_name " " (replace-regexp-in-string "'" "" plant_image)))))
 #+END_SRC
 
 #+NAME: twitter-body-generated
@@ -343,8 +386,8 @@ echo $TWITTER_ACCESS_SECRET
  (list (cons "status" "@spiralganglion 'Lathyrus laetivirens' https://www.pacificbulbsociety.org/pbswiki/files/Alpinia/Alpinia_carolinensis1NN.jpg"))
 #+END_SRC
 
-*** Let's work on Auth
-**** Step 1 Header creation and Signing the Header
+**** Let's work on Auth
+***** Step 1 Header creation and Signing the Header
 To start we need to autogenerate a few pieces of information; a nonce, a none a timestamp and the signature.
 
 Emacs's doesn't really have a built in crypto library and Ruby is  a fun language with a pretty full featured STL, let's use it to generate our Nonce
@@ -390,7 +433,7 @@ Now before we can sign anything, and in the next block we need to sign things, w
 
 Next up, is the oauth specific headers needed for the request
 #+NAME: twitter-oauth-headers
-#+BEGIN_SRC elisp :var nonce=nonce consumer-key=twitter-consumer-key access-token=twitter-access-token oauth-time=oauth-time body=twitter-body-generated signing-key=signing-key
+#+BEGIN_SRC elisp :var nonce=nonce consumer-key=twitter-consumer-key access-token=twitter-access-token oauth-time=oauth-time body=twitter-body- signing-key=signing-key
   (let*
       ((twitter-oauth-headers
         (list
@@ -409,63 +452,6 @@ Next up, is the oauth specific headers needed for the request
     (message "%s" signature-string)
     (append twitter-oauth-headers (list (cons "oauth_signature"
                                               (url-hexify-string signature)))))
-#+END_SRC
-
-TEST
-#+BEGIN_SRC elisp :var nonce=nonce consumer-key=twitter-consumer-key access-token=twitter-access-token oauth-time=oauth-time body=twitter-body-generated signing-key=signing-key
-
-  (defvar twitter-oauth-headersz
-    (list
-     (cons "oauth_consumer_key" "xvz1evFS4wEEPTGEFPHBog")
-     (cons "oauth_nonce" "kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg")
-     (cons "oauth_signature_method" "HMAC-SHA1")
-     (cons "oauth_timestamp" "1318622958")
-     (cons "oauth_token" "370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb")
-     (cons "oauth_version" "1.0")))
-
-  (defvar signature-string
-    (twitter-signature-string "POST"
-                              "https://api.twitter.com/1.1/statuses/update.json"
-                              (append twitter-oauth-headersz (list (cons "include_entities" "true")
-                                                                  (cons "status" "Hello Ladies + Gentlemen, a signed OAuth request!")))))
-
-  ;; (append twitter-oauth-headers (list (cons "oauth_signature"
-  ;;                                           (base64-encode-string
-  ;;                                            (org-sbe createSignature (signature_string (eval signature-string)) (key (eval signing-key)))))))
-  (org-sbe createSignature (signature_string (eval signature-string)) (key \"kAcSOqF21Fu85e7zjz7ZN2U4ZRhfV3WpwPAoE3Z7kBw&LswwdoUaIvS8ltyTt5jkRh4J50vUPVVHtR2YPi5kE\"))
-#+END_SRC
-
-test2
-#+BEGIN_SRC elisp
-  (list
-   (cons "oauth_consumer_key" "BdTNIdHB9YfGmXpJFz56LjzT6")
-   (cons "oauth_nonce" "WXqelicoLGqOvrOXCgly96YfRbbmde2DZ1Xbjaj38")
-   (cons "oauth_signature_method" "HMAC-SHA1")
-   (cons "oauth_timestamp" "1547977333")
-   (cons "oauth_token" "120676797-tch2TOWDlhE9yespy8Hg95INFUk7MSuPExdARC6w")
-   (cons "oauth_version" "1.0"))
-
-  (let*
-      ((twitter-oauth-headers
-        (list
-         (cons "oauth_consumer_key" "BdTNIdHB9YfGmXpJFz56LjzT6")
-         (cons "oauth_nonce" "d6238deb92664ee58312aae755382e6f")
-         (cons "oauth_signature_method" "HMAC-SHA1")
-         (cons "oauth_timestamp" "1548047121")
-         (cons "oauth_token" "120676797-tch2TOWDlhE9yespy8Hg95INFUk7MSuPExdARC6w")
-         (cons "oauth_version" "1.0")))
-       (body (list (cons "status" "\"@spiralganglion 'Scorzonera turkestanica'\"")))
-       (signing-key (twitter-signing-key  "A2Mk8rciWDXWokqB7ZfzfEtI7Z4MwYi3rEJ8s7RhVoq1xYcjLm" "GrWLOZo2ZG3DqaY4eAp3thgAaG3uc3nv6xbySQGT2as9G"))
-       (signature-string
-        (twitter-signature-string "POST"
-                                  "https://api.twitter.com/1.1/statuses/update.json/"
-                                  (append twitter-oauth-headers body)))
-       (signature
-        (org-sbe createSignature (signature_string (eval signature-string)) (key (eval signing-key)))))
-       (string= "b53zL0C4Y0CLJKKGbHfzl3741Wk%3D"
-                signature)
-       (append twitter-oauth-headers (list (cons "oauth_signature"
-                                                 signature))))
 #+END_SRC
 
 Now we need to build our HTTP headers for our request
@@ -515,3 +501,4 @@ twitter-thing
 1. https://developer.twitter.com/en/docs/basics/authentication/overview/application-only
 2. https://cloud.google.com/vision/docs/request
 3. https://developer.twitter.com/en/docs/tweets/post-and-engage/api-reference/post-statuses-update.html
+4. http://lti.tools/oauth/
