@@ -6,7 +6,7 @@ The power and flexibility that Emacs, and it's suite of packages, constantly ama
 Lately, I've spent a lot of time exploring web APIs. I've tried a several tools over the years: Postman - back when it was a chrome extension, Curl, and HTTTPie. They were all, all right to get the job done, but they all ended up missing some feature or some UX. That's when I found [[https://github.com/pashky/restclient.el][restclient]], a package for Emacs with a simple `DSL` and could convert the restclient request to an equivalent `curl` request.
 
 #+BEGIN_SRC restclient
-  // Here we will post our base64 encoded secrets to get a bearer token
+  # Here we will post our base64 encoded secrets to get a bearer token
   POST https://api.twitter.com/oauth2/token
   Authorization: Basic QmRUTklkSEI5WWZHbVhwSkZ6NTZManpUNjpBMk1rOHJjaVdEWFdva3FCN1pmemZFdEk3WjRNd1lpM3JFSjhzN1JoVm9xMXhZY2pMbQ==
   Content-Type: application/x-www-form-urlencoded;charset=UTF-8
@@ -46,7 +46,7 @@ Then once, you've `POSTed` the request a new buffer opens up with the response.
 // Request duration: 0.079710s
 #+end_example
 
-Using [[https://www.youtube.com/watch?v=fTvQTMOGJaw][resclient]] as my primary means to play with APIs worker for me for quite awhile. It was a simple to read document, that housed all the requests in a single file, and lived alongside the rest of my code in `git`.
+Using [[https://www.youtube.com/watch?v=fTvQTMOGJaw][resclient]] as my primary means to play with APIs worked for me for quite awhile. It was a simple to read document, that housed all the requests in a single file, and lived alongside the rest of my code in `git`.
 
 I eventually ran into three complications when using it however:
   1. My request files would get to big and navigating around to find a specific endpoint or a set of endpoints would be a pain.
@@ -56,11 +56,6 @@ I eventually ran into three complications when using it however:
   3. For exploring APIs I like to take notes, record responses and record the data I would put into them.
 
 There was a simple solution for my first and last points, which was to use [[https://www.youtube.com/watch?v=GK3fij-D1G8][org-mode]]. Org-mode has a [[https://orgmode.org/worg/org-contrib/babel/][babel]] extension for [[https://github.com/alf/ob-restclient.el][restclient]], making it easy for me to write in a more literate style.
-
-
-  4. However when I'm exploring APIs, first or third parties, I do it in a much more interactive manor: I'll take try stuff, I'll take notes, I'll cluster my API calls, I'll pre or post process the data. For me, this is a practice that lends it self a [[https://hub.mybinder.org/user/binder-examples-julia-python-h6xqlrbg/notebooks/julia.ipynb][notebook]] style of development.
-
-  5. However, as an Emascist `org-mode`, and [[https://github.com/alf/ob-restclient.el][ob-restclient]], we can automate process further and share are work with out coworkers. I mean, that is if our coworkers had good taste and used Emacs over Vim, or Atom, or VSCode.
 
 ** Setup
 First off, let's define a simple function to quickly clear out the result blocks in the current org file
