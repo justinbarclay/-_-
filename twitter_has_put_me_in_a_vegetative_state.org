@@ -46,7 +46,7 @@ Then once, you've `POSTed` the request a new buffer opens up with the response.
 // Request duration: 0.079710s
 #+end_example
 
-Using [[https://www.youtube.com/watch?v=fTvQTMOGJaw][resclient]] as my primary means to play with APIs worked for me for quite awhile. It was a simple to read document, that housed all the requests in a single file, and lived alongside the rest of my code in `git`.
+Using [[https://www.youtube.com/watch?v=fTvQTMOGJaw][restclient]] as my primary means to play with APIs worked for me for quite awhile. It was a simple to read document, that housed all the requests in a single file, and lived alongside the rest of my code in `git`.
 
 I eventually ran into three complications when using it however:
   1. My request files would get to big and navigating around to find a specific endpoint or a set of endpoints would be a pain.
