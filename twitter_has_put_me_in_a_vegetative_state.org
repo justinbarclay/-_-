@@ -61,6 +61,7 @@ There was a simple solution for my first and last points, which was to use [[htt
 I think it's useful to see what I am talking about, let's see how we can use `org-mode` and `restclient` can make authenticating with an `oauth` endpoint.
 *** Helper functions
 First we need to define a few functions that will sign the request and build a string that the restclient can use.
+#+begin_example
 #+BEGIN_SRC elisp
   (defun twitter-signing-key (consumer-secret token-secret)
     "Creates a signing key by combining the consumer-secret and the token secret and percent encoding the result"
@@ -122,7 +123,7 @@ First we need to define a few functions that will sign the request and build a s
        " ")
       ",")))
 #+END_SRC
-
+#+end_example
 *** Shhh it's Secret
 I don't need to store the authentication information in files, and I don't need to rememebr them! I can just use the tokens that stored in my env vars.
 #+NAME: twitter-consumer-key
@@ -441,11 +442,6 @@ We need one last piece of information before we can demonstrate our love of Plan
   (setq twitter-body
    (list
     (cons "status" (concat "" twitter_handle " " plant_name " " (replace-regexp-in-string "'" "" plant_image)))))
-#+END_SRC
-
-#+NAME: twitter-body-generated
-#+BEGIN_SRC elisp
- (list (cons "status" "@spiralganglion 'Lathyrus laetivirens' https://www.pacificbulbsociety.org/pbswiki/files/Alpinia/Alpinia_carolinensis1NN.jpg"))
 #+END_SRC
 
 * References
