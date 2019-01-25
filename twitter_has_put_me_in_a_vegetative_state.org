@@ -62,8 +62,7 @@ I think it's useful to see what I am talking about, let's see how we can use `or
 *** Helper functions
 First we need to define a few functions that will sign the request and build a string that the restclient can use.
 
-#+BEGIN_EXAMPLE
-,#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
   (defun twitter-signing-key (consumer-secret token-secret)
     "Creates a signing key by combining the consumer-secret and the token secret and percent encoding the result"
     (concat
@@ -123,8 +122,8 @@ First we need to define a few functions that will sign the request and build a s
        oauth-headers
        " ")
       ",")))
-,#+END_SRC
-#+END_EXAMPLE
+#+END_SRC
+
 *** Shhh it's Secret
 I don't need to store the authentication information in files, and I don't need to rememebr them! I can just use the tokens that stored in my env vars.
 #+NAME: twitter-consumer-key
@@ -153,7 +152,7 @@ echo $TWITTER_ACCESS_SECRET
 Can do all of the fun authentication bits that is OAuth2, we need to have some content. So, I need to be on brand for an Emacs user and let everyone know I am using Emacs for a purpose that is explicitly not anything to do with text editing.
 
 #+NAME: hello-world
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (setq twitter-body '"Hello world! I'm tweeting from Emacs")
 #+END_SRC
 
@@ -171,13 +170,13 @@ nonce.gsub(/\W/, "")
 
 Our request is going to need a time signature.
 #+NAME: oauth-time
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
   (format-time-string "%s")
 #+END_SRC
 
 We need to define the headers that we need for this request.
 #+NAME: twitter-headers
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (list
  (cons "Content-Type" "application/x-www-form-urlencoded"))
 #+END_SRC
@@ -197,13 +196,13 @@ Did I mention emacs built in cryptography is kind of lacking? Well, we'll need t
 
 Now before we can sign anything, and as an FYI in the next block we need to sign things, we need to create a signing key. By using our consumer-secret and our access-secret.
 #+NAME: signing-key
-#+BEGIN_SRC elisp :var consumer-secret=twitter-consumer-secret token-secret=twitter-access-secret
+#+BEGIN_SRC emacs-lisp :var consumer-secret=twitter-consumer-secret token-secret=twitter-access-secret
   (twitter-signing-key consumer-secret token-secret)
 #+END_SRC
 
 Next up, we need to build the header, create a string to sign, sign that string and them add that signature to our header. Simple.
 #+NAME: twitter-oauth-headers
-#+BEGIN_SRC elisp :var nonce=nonce consumer-key=twitter-consumer-key access-token=twitter-access-token oauth-time=oauth-time body=twitter-body- signing-key=signing-key
+#+BEGIN_SRC emacs-lisp :var nonce=nonce consumer-key=twitter-consumer-key access-token=twitter-access-token oauth-time=oauth-time body=twitter-body signing-key=signing-key
   (let*
       ((twitter-oauth-headers
         (list
@@ -225,7 +224,7 @@ Next up, we need to build the header, create a string to sign, sign that string 
 
 Up next, our headers need to be in a string format that our `restclient` knows how to read.
 #+NAME: twitter-restclient-headers
-#+BEGIN_SRC elisp :var header=twitter-headers twitter-oauth-headers=twitter-oauth-headers
+#+BEGIN_SRC emacs-lisp :var header=twitter-headers twitter-oauth-headers=twitter-oauth-headers
   (build-twitter-header-string header (sort twitter-oauth-headers
                                             (lambda (first second)
                                               (string< (car first) (car second)))))
@@ -233,7 +232,7 @@ Up next, our headers need to be in a string format that our `restclient` knows h
 
 We need to encode our body as a post parameter string to work as a REST client.
 #+NAME: twitter-post-body
-#+BEGIN_SRC elisp :var twitter-body=twitter-body-generated
+#+BEGIN_SRC emacs-lisp :var twitter-body=twitter-body-generated
   (setq twitter-json-body
         (concat
          ""
@@ -256,13 +255,13 @@ Finally, we take all that work we've done signing things and telling the world h
 
 ** Setup
 We need a function to sanitize the response we get from restclient
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun sanitize-restclient-response (string)
  (string-trim (replace-regexp-in-string "^#\\+BEGIN_SRC js\\|^#\\+END_SRC\\|^//[[:print:]]+" "" string)))
 #+END_SRC
 
 Here's a couple of functions we're going to use to help us parse a response from Google's API.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
   (defun parse-ml-response (responses)
     "Extracts A Google AI response down to a list of label annotations"
     (let* ((json-response (json-read-from-string responses))
@@ -287,7 +286,7 @@ Here's a couple of functions we're going to use to help us parse a response from
 #+END_SRC
 
 Finally we're going to want some code to run a specific source code block
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 
 #+END_SRC
 
@@ -302,7 +301,7 @@ Let's give our source block a name, `#+NAME: trefle`, so we can easily reference
 
 To import a variable from earlier in the file you can use `:var token=trefle` where :var token, specified that you what to insert a variable called token into the proceeding block and the contents of that variable a pull from a block by the name of `trefle`. Now we just need to build the HTTP headers we're going to use for our interaction with trefle.
 #+NAME: trefle-headers
-#+BEGIN_SRC elisp :var token=trefle
+#+BEGIN_SRC emacs-lisp :var token=trefle
   (concat
      "<<
   Content-Type: application/json
@@ -322,11 +321,11 @@ As of the last time I looked, trefle.io has over 4000 pages of plants, so we wan
 
 Before we can do anything with the output we need to clean it up, restclient likes to have all the headers for the response at the bottom of the buffer, so we need to filter those out of the response.
 #+NAME: sanitized-response
-#+BEGIN_SRC elisp :var response=plants
+#+BEGIN_SRC emacs-lisp :var response=plants
 (sanitize-restclient-response response)
 #+END_SRC
 
-Now we could use elisp, but everyone has NodeJS installed and NodeJS is pretty much built for parsing JSON, so it only makes sense to use that. So we'll grab a random plant from the sanitized results and return it's ID.
+Now we could use emacs-lisp, but everyone has NodeJS installed and NodeJS is pretty much built for parsing JSON, so it only makes sense to use that. So we'll grab a random plant from the sanitized results and return it's ID.
 
 #+NAME: plant-name
 #+BEGIN_SRC js :var plants=sanitized-response :results value drawer
@@ -349,7 +348,7 @@ Now that we've got a plant name, let's get an image to use to give an example of
 
 Now much like our search for a plant name, we need to clean up the response from google API so it's easily parsable as JSON.
 #+NAME: flower-images
-#+BEGIN_SRC elisp :var google-images=google-images
+#+BEGIN_SRC emacs-lisp :var google-images=google-images
   (sanitize-restclient-response google-images)
 #+END_SRC
 
@@ -386,7 +385,7 @@ POST https://vision.googleapis.com/v1/images:annotate?key=:api-key
 
 Again some data clean up
 #+NAME: sanitized-ml-results
-#+BEGIN_SRC elisp :var response=plant-ml-results
+#+BEGIN_SRC emacs-lisp :var response=plant-ml-results
 (sanitize-restclient-response response)
 #+END_SRC
 
@@ -422,7 +421,7 @@ Again some data clean up
 
 Let's check to see if the first three descriptors come back as plant, tree, or a flower
 #+NAME: image-is-plant-p
-#+BEGIN_SRC elisp :var response=sanitized-ml-results
+#+BEGIN_SRC emacs-lisp :var response=sanitized-ml-results
   (contains-description-p
    (parse-ml-response response)
    '("plant" "tree" "flower"))
@@ -430,16 +429,17 @@ Let's check to see if the first three descriptors come back as plant, tree, or a
 
 We need one last piece of information before we can demonstrate our love of Plants to the world, someone to tweet at. Let's ask ourselves for some input.
 #+NAME: twitter-handle
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (read-string "What is the twitter handle of someone you want to tweet? ")
 #+END_SRC
 
-# First we'll need to do some prep work before we can authenticate with twitter. In [[https://developer.twitter.com/en/docs/basics/authentication/overview/application-only#step-1-encode-consumer-key-and-secret][Step 1]] of the Twitter tutorial for authentication, we need to encode our tokens according to RFC 1738, join them with a colon, and then base64 encode the result. In the snippet below we're going to use an elisp function that follows RFC 1738, so we don't have to do it manually.
+# First we'll need to do some prep work before we can authenticate with twitter. In [[https://developer.twitter.com/en/docs/basics/authentication/overview/application-only#step-1-encode-consumer-key-and-secret][Step 1]] of the Twitter tutorial for authentication, we need to encode our tokens according to RFC 1738, join them with a colon, and then base64 encode the result. In the snippet below we're going to use an emacs-lisp function that follows RFC 1738, so we don't have to do it manually.
 
 ** Twitter Stuff
+
 *** Let's generating content
 #+NAME: twitter-body
-#+BEGIN_SRC elisp :var plant_name=plant-name plant_image=plant-image twitter_handle=twitter-handle
+#+BEGIN_SRC emacs-lisp :var plant_name=plant-name plant_image=plant-image twitter_handle=twitter-handle
   (setq twitter-body
    (list
     (cons "status" (concat "" twitter_handle " " plant_name " " (replace-regexp-in-string "'" "" plant_image)))))
