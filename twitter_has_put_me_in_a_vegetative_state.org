@@ -1,4 +1,23 @@
-* Twitter has put me in a vegetative state
+* Twitter has put me in a vegetative state                              :TOC_4:
+  - [[#rest-call-me-maybe][Rest Call Me Maybe]]
+  - [[#twitter][Twitter]]
+    - [[#helper-functions][Helper functions]]
+    - [[#shhh-its-a-secret][Shhh It's a Secret]]
+    - [[#lets-work-on-auth][Let's work on Auth]]
+      - [[#step-1-generate-a-body][Step 1 Generate a body]]
+      - [[#step-2-creating-and-signing-the-header][Step 2 Creating and Signing the Header]]
+    - [[#step-3-posting-to-twitter][Step 3: Posting To Twitter]]
+  - [[#to-11][To 11]]
+    - [[#more-helper-functions][More Helper Functions]]
+    - [[#demo][Demo]]
+      - [[#harvesting-a-name][Harvesting a name]]
+      - [[#imagine][Imagine]]
+      - [[#what-will-we-learn-today][What will we learn today?]]
+      - [[#a-rose-by-any-other-name][A rose by any other name]]
+      - [[#content-is-king][Content is king]]
+      - [[#rerun][Rerun]]
+- [[#references][References]]
+
 ** Rest Call Me Maybe
 
 The power and flexibility of Emacs, and its suite of packages, constantly amazes me. I've been a long time fan of `org-mode`. IMO it is great, in Emacs, replacement for Markdown and a number of other document formats. `org-mode` is a great place to practice [[https://www.offerzen.com/blog/literate-programming-empower-your-writing-with-emacs-org-mode][literate programming]], but it's also a great place to an interactive style of programming, like a REPL or a Jupyter Notebook.
