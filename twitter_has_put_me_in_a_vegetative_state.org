@@ -61,8 +61,9 @@ There was a simple solution for my first and last points, which was to use [[htt
 I think it's useful to see what I am talking about, let's see how we can use `org-mode` and `restclient` can make authenticating with an `oauth` endpoint.
 *** Helper functions
 First we need to define a few functions that will sign the request and build a string that the restclient can use.
-#+begin_example
-#+BEGIN_SRC elisp
+
+#+BEGIN_EXAMPLE
+,#+BEGIN_SRC elisp
   (defun twitter-signing-key (consumer-secret token-secret)
     "Creates a signing key by combining the consumer-secret and the token secret and percent encoding the result"
     (concat
@@ -122,8 +123,8 @@ First we need to define a few functions that will sign the request and build a s
        oauth-headers
        " ")
       ",")))
-#+END_SRC
-#+end_example
+,#+END_SRC
+#+END_EXAMPLE
 *** Shhh it's Secret
 I don't need to store the authentication information in files, and I don't need to rememebr them! I can just use the tokens that stored in my env vars.
 #+NAME: twitter-consumer-key
