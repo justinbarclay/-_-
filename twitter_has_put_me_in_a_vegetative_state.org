@@ -1,9 +1,9 @@
 * Twitter has put me in a vegetative state
 ** Rest Call Me Maybe
 
-The power and flexibility of Emacs, and it's suite of packages, constantly amazes me. I've been a long time fan of `org-mode` for a long time, it's a great in Emacs replacement for Markdown and a number of other document formats. `org-mode` is a great place to practice [[https://www.offerzen.com/blog/literate-programming-empower-your-writing-with-emacs-org-mode][literate programming]], but it's also a great place to an interactive style of programming, like a REPL or a Jupyter Notebook.
+The power and flexibility of Emacs, and its suite of packages, constantly amazes me. I've been a long time fan of `org-mode`. IMO it is great, in Emacs, replacement for Markdown and a number of other document formats. `org-mode` is a great place to practice [[https://www.offerzen.com/blog/literate-programming-empower-your-writing-with-emacs-org-mode][literate programming]], but it's also a great place to an interactive style of programming, like a REPL or a Jupyter Notebook.
 
-Lately, I've spent a lot of time exploring web APIs. I've tried a couple of tools over the years: Postman — back when it was a chrome extension, Curl, and HTTTPie. They were all, all right and got the job done, but they all ended up missing some feature or some UX. That's when I found [[https://github.com/pashky/restclient.el][restclient]], a package for Emacs with a simple `DSL` and could convert the restclient request to an equivalent `curl` request.
+Lately, I've spent a lot of time exploring web APIs. I've tried a couple of tools over the years: Postman — back when it was a chrome extension, Curl, and HTTTPie. They were all, ok — they got the job done — but they all ended up missing some feature or some UX. That's when I found [[https://github.com/pashky/restclient.el][restclient]], a package for Emacs with a simple `DSL` and could convert the restclient request to an equivalent `curl` request.
 
 #+BEGIN_SRC restclient
   # Here we will post our base64 encoded secrets to get a bearer token
@@ -52,8 +52,8 @@ I eventually ran into three complications when using it however:
   1. My request files would become a mess and navigating to find a specific endpoint or a set of endpoints was a pain.
   2. I was lazy and dealing with authenticated APIs was a pain.
      - I'd need to enter my credentials each time I needed to get a new token
-     - Once I authenticated I would have to copy and paste that token from the response buffer into a variable, to use throughout the restclient file.
-  3. For exploring APIs I like to take notes, record responses, and record the in.
+       - Once I authenticated, I would have to copy and paste that token from the response buffer into a variable, to use throughout the restclient file.
+  3. For exploring APIs I like to take notes, record responses, and record the input.
 
 There was a simple solution for my first and last points, which was to use [[https://www.youtube.com/watch?v=GK3fij-D1G8][org-mode]]. Org-mode has a [[https://orgmode.org/worg/org-contrib/babel/][babel]] extension for [[https://github.com/alf/ob-restclient.el][restclient]], making it easy for me to write in a more literate style.
 
@@ -159,9 +159,11 @@ Before we can do all of the fun authentication bits that is OAuth2, we need to h
 #+END_SRC
 
 **** Step 2 Creating and Signing the Header
-Ok, now that we have our twitter status, we need to autogenerate a few more pieces of information; a nonce, a none a timestamp and the signature.
+Ok, now that we have our twitter status, we need to autogenerate a few more pieces of information; a nonce, a timestamp, and the signature.
 
-Emacs's doesn't really have a built in crypto library, but do you know who does? Ruby! It's is a fun language with a pretty full featured STL, let's use it to generate our Nonce.
+Emacs doesn't really have a built in crypto library, but do you know who does? Ruby! It's is a fun language with a pretty full featured STL, let's use it to generate our nonce.
+
+#+BEGIN_EXAMPLE
 #+NAME: nonce
 #+BEGIN_SRC ruby
 require 'securerandom'
@@ -194,9 +196,10 @@ Did I mention emacs built in cryptography is kind of lacking? Well, we'll need t
 
   return createSignature(key, signature_string).toString('base64');
 #+END_SRC
+#+END_EXAMPLE
 
-
-Now before we can sign anything, and as an FYI in the next block we need to sign things, we need to create a signing key. By using our consumer-secret and our access-secret.
+Now before we can sign anything, and we *do* need to sign things, we need to create a signing key. We can use our consumer-secret and our access-secret we can build a twitter signing key.
+#+BEGIN_EXAMPLE
 #+NAME: signing-key
 #+BEGIN_SRC emacs-lisp :var consumer-secret=twitter-consumer-secret token-secret=twitter-access-secret
   (twitter-signing-key consumer-secret token-secret)
@@ -224,6 +227,7 @@ Next up, we need to build the header, create a string to sign, sign that string 
                                               (url-hexify-string signature)))))
 #+END_SRC
 
+*** Step 3: Posting To Twitter
 Up next, our headers need to be in a string format that our `restclient` knows how to read.
 #+NAME: twitter-restclient-headers
 #+BEGIN_SRC emacs-lisp :var header=twitter-headers twitter-oauth-headers=twitter-oauth-headers
