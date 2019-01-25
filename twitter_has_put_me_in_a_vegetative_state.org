@@ -466,8 +466,8 @@ Now we need to build our body into something we can process later together...
    (list
     (cons "status" (concat "" twitter_handle " " plant_name " " (replace-regexp-in-string "'" "" plant_image)))))
 #+END_SRC
-**** Rerun
-
+**** TODO Rerun
+In this section we copy and paste most of the code we've written for doing all the fun twitter stuff in the second section and use it to post the new content
 * References
 1. https://developer.twitter.com/en/docs/basics/authentication/overview/application-only
 2. https://cloud.google.com/vision/docs/request
