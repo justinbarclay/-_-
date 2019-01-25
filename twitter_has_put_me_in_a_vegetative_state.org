@@ -404,7 +404,7 @@ But how can we be sure to trust Google? When we're running our code don't have t
   }
 #+END_SRC
 
-[[./images/clean_things.jpg]]
+[[./images/clean_things.png]]
 #+NAME: sanitized-ml-results
 #+BEGIN_SRC emacs-lisp :var response=plant-ml-results
 (sanitize-restclient-response response)
