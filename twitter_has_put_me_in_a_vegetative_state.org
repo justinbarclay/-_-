@@ -55,13 +55,12 @@ I eventually ran into three complications when using it however:
        - Once I authenticated, I would have to copy and paste that token from the response buffer into a variable, to use throughout the restclient file.
   3. For exploring APIs I like to take notes, record responses, and record the input.
 
-There was a simple solution for my first and last points, which was to use [[https://www.youtube.com/watch?v=GK3fij-D1G8][org-mode]]. Org-mode has a [[https://orgmode.org/worg/org-contrib/babel/][babel]] extension for [[https://github.com/alf/ob-restclient.el][restclient]], making it easy for me to write in a more literate style.
+There was a simple solution for my first and last points, which was to use [[https://www.youtube.com/watch?v=GK3fij-D1G8][org-mode]]. Org-mode has a [[https://orgmode.org/worg/org-contrib/babel/][babel]] extension for [[https://github.com/alf/ob-restclient.el][restclient]]. Babel is an extension that runs code contained in SRC block: `#+BEGIN_SRC...#+END_SRC` and saves any thing sent to STDOUT or value returned and then can be used in other SRC code blocks.
 
 ** Twitter
-I think it's useful to see what I am talking about, let's see how we can use `org-mode` and `restclient` can make authenticating with an `oauth` endpoint.
-
+I think it's useful to see what I am talking about. So, let's see how we can use `org-mode` and `restclient` to authenticate with an `oauth` endpoint.
 *** Helper functions
-First we need to define a few functions that we are going to use during OAuth authentication. I could use a library or package for this, but I want to use as little external code as possible.
+First we need to define a few functions that we are going to use during OAuth authentication. I could use a library or package for this, but I really hate myself so I want to spend an entire day debugging 403 errors.
 
 #+BEGIN_EXAMPLE
 ,#+BEGIN_SRC emacs-lisp
@@ -130,7 +129,6 @@ First we need to define a few functions that we are going to use during OAuth au
 ,#+END_SRC
 #+END_EXAMPLE
 *** Shhh It's a Secret
-I don't need to store the authentication information in files, and I don't need to rememeber them! I can just use the information that is stored in my environment.
 #+BEGIN_EXAMPLE
 #+NAME: twitter-consumer-key
 ,#+BEGIN_SRC bash
@@ -152,6 +150,7 @@ echo $TWITTER_ACCESS_TOKEN
 echo $TWITTER_ACCESS_SECRET
 ,#+END_SRC
 #+END_EXAMPLE
+I don't need to store the authentication information in files, and I don't need to rememeber them! I can just use the information that is stored in my environment.
 *** Let's work on Auth
 **** Step 1 Generate a body
 Before we can do all of the fun authentication bits that is OAuth2, we need to have some content. So, I need to be on brand for an Emacs user and let everyone know I am using Emacs for a purpose that is explicitly not anything to do with text editing.
