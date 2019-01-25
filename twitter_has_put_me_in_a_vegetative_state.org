@@ -62,7 +62,7 @@ I think it's useful to see what I am talking about. So, let's see how we can use
 *** Helper functions
 First we need to define a few functions that we are going to use during OAuth authentication. I could use a library or package for this, but I really hate myself so I want to spend an entire day debugging 403 errors.
 
-#+BEGIN_EXAMPLE
+#+BEGIN_EXAMPLE org
 ,#+BEGIN_SRC emacs-lisp
   (defun twitter-signing-key (consumer-secret token-secret)
     "Creates a signing key by combining the consumer-secret and the token secret and percent encoding the result"
@@ -129,7 +129,7 @@ First we need to define a few functions that we are going to use during OAuth au
 ,#+END_SRC
 #+END_EXAMPLE
 *** Shhh It's a Secret
-#+BEGIN_EXAMPLE
+#+BEGIN_EXAMPLE org
 #+NAME: twitter-consumer-key
 ,#+BEGIN_SRC bash
 echo $TWITTER_CONSUMER_KEY
@@ -155,7 +155,7 @@ I don't need to store the authentication information in files, and I don't need 
 **** Step 1 Generate a body
 Before we can do all of the fun authentication bits that is OAuth2, we need to have some content. So, I need to be on brand for an Emacs user and let everyone know I am using Emacs for a purpose that is explicitly not anything to do with text editing.
 
-#+BEGIN_EXAMPLE
+#+BEGIN_EXAMPLE org
 #+NAME: hello-world
 ,#+BEGIN_SRC emacs-lisp
 (setq twitter-body (list (cons "status" "Hello world! I'm tweeting from Emacs")))
@@ -166,7 +166,7 @@ Ok, now that we have our twitter status, we need to autogenerate a few more piec
 
 Emacs doesn't really have a built in crypto library, but do you know who does? Ruby! It's is a fun language with a pretty full featured STL, let's use it to generate our nonce.
 
-#+BEGIN_EXAMPLE
+#+BEGIN_EXAMPLE org
 #+NAME: nonce
 ,#+BEGIN_SRC ruby
 require 'securerandom'
@@ -177,14 +177,14 @@ nonce.gsub(/\W/, "")
 #+END_EXAMPLE
 
 Our request is going to need a time signature.
-#+BEGIN_EXAMPLE
+#+BEGIN_EXAMPLE org
 #+NAME: oauth-time
 ,#+BEGIN_SRC emacs-lisp
   (format-time-string "%s")
 ,#+END_SRC
 #+END_EXAMPLE
 
-#+BEGIN_EXAMPLE
+#+BEGIN_EXAMPLE org
 We need to define the headers that we need for this request.
 #+NAME: twitter-headers
 ,#+BEGIN_SRC emacs-lisp
@@ -194,7 +194,7 @@ We need to define the headers that we need for this request.
 #+END_EXAMPLE
 
 Did I mention emacs built in cryptography is kind of lacking? Well, we'll need to let another language do the heavy lifting when signing the request. I like Node and Node has a decent crypto library built into it. In the example below I am defining a code block as a function that I am going to call later and use it in an emacs-lisp source block.
-#+BEGIN_EXAMPLE
+#+BEGIN_EXAMPLE org
 #+NAME: createSignature
 ,#+BEGIN_SRC js :var signature_string="" :var key=""
   let crypto = require('crypto')
@@ -208,7 +208,7 @@ Did I mention emacs built in cryptography is kind of lacking? Well, we'll need t
 #+END_EXAMPLE
 
 Now before we can sign anything, and we *do* need to sign things, we need to create a signing key. We can use our consumer-secret and our access-secret we can build a twitter signing key.
-#+BEGIN_EXAMPLE
+#+BEGIN_EXAMPLE org
 #+NAME: signing-key
 ,#+BEGIN_SRC emacs-lisp :var consumer-secret=twitter-consumer-secret token-secret=twitter-access-secret
   (twitter-signing-key consumer-secret token-secret)
@@ -216,7 +216,7 @@ Now before we can sign anything, and we *do* need to sign things, we need to cre
 #+END_EXAMPLE
 
 Next up, we need to build the header, create a string to sign, sign that string and them add that signature to our header. Simple.
-#+BEGIN_EXAMPLE
+#+BEGIN_EXAMPLE org
 #+NAME: twitter-oauth-headers
 ,#+BEGIN_SRC emacs-lisp :var nonce=nonce consumer-key=twitter-consumer-key access-token=twitter-access-token oauth-time=oauth-time body=twitter-body signing-key=signing-key
   (let*
@@ -241,7 +241,7 @@ Next up, we need to build the header, create a string to sign, sign that string 
 
 *** Step 3: Posting To Twitter
 Up next, our headers need to be in a string format that our `restclient` knows how to read.
-#+BEGIN_EXAMPLE
+#+BEGIN_EXAMPLE org
 #+NAME: twitter-restclient-headers
 ,#+BEGIN_SRC emacs-lisp :var header=twitter-headers twitter-oauth-headers=twitter-oauth-headers
   (build-twitter-header-string header (sort twitter-oauth-headers
@@ -251,7 +251,7 @@ Up next, our headers need to be in a string format that our `restclient` knows h
 #+END_EXAMPLE
 
 We need to encode our body as a post parameter string to work as a REST client.
-#+BEGIN_EXAMPLE
+#+BEGIN_EXAMPLE org
 #+NAME: twitter-post-body
 ,#+BEGIN_SRC emacs-lisp :var twitter-body=hello-world
   (setq twitter-json-body
@@ -267,7 +267,7 @@ We need to encode our body as a post parameter string to work as a REST client.
 #+END_EXAMPLE
 
 Finally, we take all that work we've done signing things and telling the world how much we like Emacs, let's end this:
-#+BEGIN_EXAMPLE
+#+BEGIN_EXAMPLE org
 ,#+BEGIN_SRC restclient :var twitter-headers=twitter-restclient-headers twitter-body=twitter-json-body
   #
   :body := (concat twitter-json-body)
@@ -276,7 +276,12 @@ Finally, we take all that work we've done signing things and telling the world h
 ,#+END_SRC
 #+END_EXAMPLE
 
-** Setup
+** To 11
+
+[[./images/to_11.gif]]
+Now that we've seen the basic process for using `restclient` in an interactive literate programming style. Let's see how much further we can take things.
+
+*** More Helper Functions
 We need a function to sanitize the response we get from restclient
 #+BEGIN_SRC emacs-lisp
 (defun sanitize-restclient-response (string)
@@ -307,15 +312,8 @@ Here's a couple of functions we're going to use to help us parse a response from
               annotated-descriptions
               :initial-value nil)))
 #+END_SRC
-
-Finally we're going to want some code to run a specific source code block
-#+BEGIN_SRC emacs-lisp
-
-#+END_SRC
-
-** Preamble
-I really like plants, and I love to learn random plant facts. So I am going to use [[https://trefle.io/reference][trefle.io]] API to tweet out facts about random plants.
-** Demo
+*** Demo
+**** Harvesting a name
 Let's give our source block a name, `#+NAME: trefle`, so we can easily reference it throughout the rest of our notebook. I am using my Mac's keychain to store and retrieve an access token I have stored for trefle.io.
 #+NAME: trefle
 #+BEGIN_SRC bash :results output
@@ -348,72 +346,73 @@ Before we can do anything with the output we need to clean it up, restclient lik
 (sanitize-restclient-response response)
 #+END_SRC
 
-Now we could use emacs-lisp, but everyone has NodeJS installed and NodeJS is pretty much built for parsing JSON, so it only makes sense to use that. So we'll grab a random plant from the sanitized results and return it's ID.
-
+Now we could use emacs-lisp, but everyone has NodeJS installed and NodeJS is pretty much built for parsing JSON, so it only makes sense to use that. We'll grab a random plant from the results and return its name.
 #+NAME: plant-name
 #+BEGIN_SRC js :var plants=sanitized-response :results value drawer
   let index = Math.floor(Math.random() * 30);
   return JSON.parse(plants)[index].scientific_name;
 #+END_SRC
 
-Now, I need to get my Google API key, for this I've been lazy and have just been storing it as an ENV var.
+**** Imagine
+I need to get my Google API key, for this I've been lazy and have just been storing it in my environment.
 #+NAME: google-api-key
 #+BEGIN_SRC bash
   echo $GOOGLE_API_KEY
 #+END_SRC
 
-Now that we've got a plant name, let's get an image to use to give an example of the plant.
-
+We've got a plant name, now we need image of the plant.
 #+NAME: google-images
 #+BEGIN_SRC restclient :var api-key=google-api-key plant-name=plant-name
   GET https://content.googleapis.com/customsearch/v1?cx=009341007550343915479%3Afg_hsgzltxw&q=:plant-name&searchType=image&key=:api-key
 #+END_SRC
 
-Now much like our search for a plant name, we need to clean up the response from google API so it's easily parsable as JSON.
+Much like our search for a plant name, we need to clean up the response from google API so it's easily parsable as JSON.
 #+NAME: flower-images
 #+BEGIN_SRC emacs-lisp :var google-images=google-images
   (sanitize-restclient-response google-images)
 #+END_SRC
 
-Now that we have a nice list of plants, let's play google roulette and use the first image from the search.
-
+We have a nice list of plant images, let's play google roulette and use the first image from the search.
 #+NAME: plant-image
 #+BEGIN_SRC js :var plant_images=flower-images :results value drawer
   return "" + JSON.parse(plant_images).items[0].link
 #+END_SRC
 
-But how can we be sure to trust Google? We don't have time to make sure all of our code does what it is actually supposed to do. In stead, we'll use Machine Learning provided by the fabulous Google to ensure our image is what we expect it to be.
+**** What will we learn today?
+[[./images/PreciousHoarseFieldspaniel.gif]]
+But how can we be sure to trust Google? When we're running our code don't have time to make sure all it does what it is actually supposed to do. Instead, we'll use Machine Learning provided by the fabulous Google to ensure our image is what we expect it to be. We'll ask google for the top 3 labels it has given that image and if it contains a plant like word we'll use it later on.
 #+NAME: plant-ml-results
 #+BEGIN_SRC restclient :var api-key=google-api-key plant-image=plant-image
-POST https://vision.googleapis.com/v1/images:annotate?key=:api-key
-{
-  "requests":[
-    {
-      "image":{
-        "source":{
-          "imageUri":
-           :plant-image
-        }
-      },
-      "features":[
-        {
-          "type":"LABEL_DETECTION",
-          "maxResults":3
-        }
-      ]
-    }
-  ]
+  POST https://vision.googleapis.com/v1/images:annotate?key=:api-key
+  {
+    "requests":[
+      {
+        "image":{
+          "source":{
+            "imageUri":
+            :plant-image
+          }
+        },
+        "features":[
+          {
+            "type":"LABEL_DETECTION",
+            "maxResults":3
+          }
+        ]
+      }
+    ]
   }
 #+END_SRC
 
-Again some data clean up
+[[./images/clean_things.jpg]]
 #+NAME: sanitized-ml-results
 #+BEGIN_SRC emacs-lisp :var response=plant-ml-results
 (sanitize-restclient-response response)
 #+END_SRC
 
-#+NAME: sanitized-ml-results
-#+begin_example
+If you're curious what talking to the Google Vision api looks like...
+#+NAME: google-vision-response
+#+begin_example json
 {
   "responses": [
     {
@@ -442,30 +441,32 @@ Again some data clean up
 }
 #+end_example
 
-Let's check to see if the first three descriptors come back as plant, tree, or a flower
+Let's check to see if the first three descriptors come back as plant, tree, or a flower:
 #+NAME: image-is-plant-p
 #+BEGIN_SRC emacs-lisp :var response=sanitized-ml-results
   (contains-description-p
    (parse-ml-response response)
    '("plant" "tree" "flower"))
 #+END_SRC
+***** TODO Add section check for predicate returning true
+In this section we will show how to use them result from image-is-plant-p, to check if the image is of a plant like thing and if not rerun the source blocks until we geta result that we expect.
 
+**** A rose by any other name
 We need one last piece of information before we can demonstrate our love of Plants to the world, someone to tweet at. Let's ask ourselves for some input.
 #+NAME: twitter-handle
 #+BEGIN_SRC emacs-lisp
 (read-string "What is the twitter handle of someone you want to tweet? ")
 #+END_SRC
 
-# First we'll need to do some prep work before we can authenticate with twitter. In [[https://developer.twitter.com/en/docs/basics/authentication/overview/application-only#step-1-encode-consumer-key-and-secret][Step 1]] of the Twitter tutorial for authentication, we need to encode our tokens according to RFC 1738, join them with a colon, and then base64 encode the result. In the snippet below we're going to use an emacs-lisp function that follows RFC 1738, so we don't have to do it manually.
-
-** Twitter Stuff
-*** Let's generating content
+**** Content is king
+Now we need to build our body into something we can process later together...
 #+NAME: twitter-body
 #+BEGIN_SRC emacs-lisp :var plant_name=plant-name plant_image=plant-image twitter_handle=twitter-handle
   (setq twitter-body
    (list
     (cons "status" (concat "" twitter_handle " " plant_name " " (replace-regexp-in-string "'" "" plant_image)))))
 #+END_SRC
+**** Rerun
 
 * References
 1. https://developer.twitter.com/en/docs/basics/authentication/overview/application-only
