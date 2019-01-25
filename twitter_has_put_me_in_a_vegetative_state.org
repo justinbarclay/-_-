@@ -1,9 +1,9 @@
 * Twitter has put me in a vegetative state
 ** Rest Call Me Maybe
 
-The power and flexibility that Emacs, and it's suite of packages, constantly amazes me. I've been a big fan of `org-mode` for a long time, it's a great in Emacs replacement for Markdown and a number of other document formats, thanks to pandoc. `org-mode` is a great place to practice [[https://www.offerzen.com/blog/literate-programming-empower-your-writing-with-emacs-org-mode][literate programming]], but it's also a great place to an interactive style of programming, like a REPL or a Jupyter Notebook.
+The power and flexibility of Emacs, and it's suite of packages, constantly amazes me. I've been a long time fan of `org-mode` for a long time, it's a great in Emacs replacement for Markdown and a number of other document formats. `org-mode` is a great place to practice [[https://www.offerzen.com/blog/literate-programming-empower-your-writing-with-emacs-org-mode][literate programming]], but it's also a great place to an interactive style of programming, like a REPL or a Jupyter Notebook.
 
-Lately, I've spent a lot of time exploring web APIs. I've tried a several tools over the years: Postman — back when it was a chrome extension, Curl, and HTTTPie. They were all, all right to get the job done, but they all ended up missing some feature or some UX. That's when I found [[https://github.com/pashky/restclient.el][restclient]], a package for Emacs with a simple `DSL` and could convert the restclient request to an equivalent `curl` request.
+Lately, I've spent a lot of time exploring web APIs. I've tried a couple of tools over the years: Postman — back when it was a chrome extension, Curl, and HTTTPie. They were all, all right and got the job done, but they all ended up missing some feature or some UX. That's when I found [[https://github.com/pashky/restclient.el][restclient]], a package for Emacs with a simple `DSL` and could convert the restclient request to an equivalent `curl` request.
 
 #+BEGIN_SRC restclient
   # Here we will post our base64 encoded secrets to get a bearer token
@@ -49,18 +49,19 @@ Then once, you've `POSTed` the request a new buffer opens up with the response.
 Using [[https://www.youtube.com/watch?v=fTvQTMOGJaw][restclient]] as my primary means to play with APIs worked for me for quite awhile. It was a simple to read document, that housed all the requests in a single file, and lived alongside the rest of my code in `git`.
 
 I eventually ran into three complications when using it however:
-  1. My request files would get to big and navigating around to find a specific endpoint or a set of endpoints would be a pain.
+  1. My request files would become a mess and navigating to find a specific endpoint or a set of endpoints was a pain.
   2. I was lazy and dealing with authenticated APIs was a pain.
      - I'd need to enter my credentials each time I needed to get a new token
-     - Once I authenticated I would have to copy and paste that token from the response buffer into a variable in my restclient file
-  3. For exploring APIs I like to take notes, record responses and record the data I would put into them.
+     - Once I authenticated I would have to copy and paste that token from the response buffer into a variable, to use throughout the restclient file.
+  3. For exploring APIs I like to take notes, record responses, and record the in.
 
 There was a simple solution for my first and last points, which was to use [[https://www.youtube.com/watch?v=GK3fij-D1G8][org-mode]]. Org-mode has a [[https://orgmode.org/worg/org-contrib/babel/][babel]] extension for [[https://github.com/alf/ob-restclient.el][restclient]], making it easy for me to write in a more literate style.
 
 ** Twitter
 I think it's useful to see what I am talking about, let's see how we can use `org-mode` and `restclient` can make authenticating with an `oauth` endpoint.
+
 *** Helper functions
-First we need to define a few functions that will sign the request and build a string that the restclient can use.
+First we need to define a few functions that we are going to use during OAuth authentication. I could use a library or package for this, but I want to use as little external code as possible.
 
 #+BEGIN_SRC emacs-lisp
   (defun twitter-signing-key (consumer-secret token-secret)
@@ -73,6 +74,7 @@ First we need to define a few functions that will sign the request and build a s
       token-secret)))
 
   (defun twitter-signature-string (method base params)
+    "Builds a hex encoded string of the format METHOF&BASE&PARAM1=VALUE1..."
     (let ((sorted-params
            (sort params
                  (lambda (first second)
@@ -94,7 +96,8 @@ First we need to define a few functions that will sign the request and build a s
          "&")))))
 
   (defun build-twitter-header-string (header oauth-headers)
-    "Takes in a list of cons cells that represent HTTP headers, as well as the information needed to define the OAUTH response for a Twitter request, and build a restclient style header string"
+    "Takes in a list of cons cells that represent HTTP headers, as well as the information needed to define
+     the OAUTH response for a Twitter request, and build a restclient style header string"
     (concat
      "<<\n"
      (mapconcat
@@ -121,11 +124,12 @@ First we need to define a few functions that will sign the request and build a s
             ",")))
        oauth-headers
        " ")
-      ",")))
+      ","))
+    "#")
 #+END_SRC
 
-*** Shhh it's Secret
-I don't need to store the authentication information in files, and I don't need to rememebr them! I can just use the tokens that stored in my env vars.
+*** Shhh It's a Secret
+I don't need to store the authentication information in files, and I don't need to rememeber them! I can just use the information that stored in my environment.
 #+NAME: twitter-consumer-key
 #+BEGIN_SRC sh
 echo $TWITTER_CONSUMER_KEY
@@ -145,18 +149,16 @@ echo $TWITTER_ACCESS_TOKEN
 #+BEGIN_SRC sh
 echo $TWITTER_ACCESS_SECRET
 #+END_SRC
-
-*** Functions stuff
-**** Let's work on Auth
-***** Step 0 Generate a body
-Can do all of the fun authentication bits that is OAuth2, we need to have some content. So, I need to be on brand for an Emacs user and let everyone know I am using Emacs for a purpose that is explicitly not anything to do with text editing.
+*** Let's work on Auth
+**** Step 1 Generate a body
+Before we can do all of the fun authentication bits that is OAuth2, we need to have some content. So, I need to be on brand for an Emacs user and let everyone know I am using Emacs for a purpose that is explicitly not anything to do with text editing.
 
 #+NAME: hello-world
 #+BEGIN_SRC emacs-lisp
-(setq twitter-body '"Hello world! I'm tweeting from Emacs")
+(setq twitter-body (list (cons "status" "Hello world! I'm tweeting from Emacs")))
 #+END_SRC
 
-***** Step 1 Header creation and Signing the Header
+**** Step 2 Creating and Signing the Header
 Ok, now that we have our twitter status, we need to autogenerate a few more pieces of information; a nonce, a none a timestamp and the signature.
 
 Emacs's doesn't really have a built in crypto library, but do you know who does? Ruby! It's is a fun language with a pretty full featured STL, let's use it to generate our Nonce.
@@ -181,7 +183,7 @@ We need to define the headers that we need for this request.
  (cons "Content-Type" "application/x-www-form-urlencoded"))
 #+END_SRC
 
-Did I mention emacs built in cryptography is kind of lacking? Well, we'll need to let another language do the heavy lifting. I like Node and Node has a decent crypto library built into it. In the example below I am defining a code block as a function that I am going to call later and use it in an emacs-lisp source block.
+Did I mention emacs built in cryptography is kind of lacking? Well, we'll need to let another language do the heavy lifting when signing the request. I like Node and Node has a decent crypto library built into it. In the example below I am defining a code block as a function that I am going to call later and use it in an emacs-lisp source block.
 #+NAME: createSignature
 #+BEGIN_SRC js :var signature_string="" :var key=""
   let crypto = require('crypto')
@@ -232,7 +234,7 @@ Up next, our headers need to be in a string format that our `restclient` knows h
 
 We need to encode our body as a post parameter string to work as a REST client.
 #+NAME: twitter-post-body
-#+BEGIN_SRC emacs-lisp :var twitter-body=twitter-body-generated
+#+BEGIN_SRC emacs-lisp :var twitter-body=hello-world
   (setq twitter-json-body
         (concat
          ""
@@ -242,7 +244,6 @@ We need to encode our body as a post parameter string to work as a REST client.
           twitter-body
           "&")
          ""))
-  twitter-thing
 #+END_SRC
 
 Finally, we take all that work we've done signing things and telling the world how much we like Emacs, let's end this:
@@ -436,7 +437,6 @@ We need one last piece of information before we can demonstrate our love of Plan
 # First we'll need to do some prep work before we can authenticate with twitter. In [[https://developer.twitter.com/en/docs/basics/authentication/overview/application-only#step-1-encode-consumer-key-and-secret][Step 1]] of the Twitter tutorial for authentication, we need to encode our tokens according to RFC 1738, join them with a colon, and then base64 encode the result. In the snippet below we're going to use an emacs-lisp function that follows RFC 1738, so we don't have to do it manually.
 
 ** Twitter Stuff
-
 *** Let's generating content
 #+NAME: twitter-body
 #+BEGIN_SRC emacs-lisp :var plant_name=plant-name plant_image=plant-image twitter_handle=twitter-handle
