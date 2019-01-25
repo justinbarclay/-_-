@@ -279,6 +279,7 @@ Finally, we take all that work we've done signing things and telling the world h
 ** To 11
 
 [[./images/to_11.gif]]
+
 Now that we've seen the basic process for using `restclient` in an interactive literate programming style. Let's see how much further we can take things.
 
 *** More Helper Functions
@@ -380,6 +381,7 @@ We have a nice list of plant images, let's play google roulette and use the firs
 
 **** What will we learn today?
 [[./images/PreciousHoarseFieldspaniel.gif]]
+
 But how can we be sure to trust Google? When we're running our code don't have time to make sure all it does what it is actually supposed to do. Instead, we'll use Machine Learning provided by the fabulous Google to ensure our image is what we expect it to be. We'll ask google for the top 3 labels it has given that image and if it contains a plant like word we'll use it later on.
 #+NAME: plant-ml-results
 #+BEGIN_SRC restclient :var api-key=google-api-key plant-image=plant-image
