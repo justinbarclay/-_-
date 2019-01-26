@@ -298,6 +298,19 @@ We need a function to sanitize the response we get from restclient
  (string-trim (replace-regexp-in-string "^#\\+BEGIN_SRC js\\|^#\\+END_SRC\\|^//[[:print:]]+" "" string)))
 #+END_SRC
 
+Let's be able to execute an arbitrary source code block
+#+BEGIN_SRC elisp
+  (defun run-org-block (&optional code-block-name)
+    (save-excursion
+      (let ((code-block (or code-block-name
+                            (completing-read "Code Block: " (org-babel-src-block-names))))
+            (goto-char
+             (org-babel-find-named-block
+              code-block))
+            (org-babel-execute-src-block-maybe)))))
+#+END_SRC
+
+
 Here's a couple of functions we're going to use to help us parse a response from Google's API.
 #+BEGIN_SRC emacs-lisp
   (defun parse-ml-response (responses)
@@ -316,12 +329,16 @@ Here's a couple of functions we're going to use to help us parse a response from
       (reduce (lambda (predicate description)
                 (if predicate
                     predicate
-                  (if (member description descriptions)
+                  (if (member (downcase description) descriptions)
                       't
                     nil)))
               annotated-descriptions
               :initial-value nil)))
 #+END_SRC
+
+#+RESULTS:
+: contains-description-p
+
 *** Demo
 **** Harvesting a name
 Let's give our source block a name, `#+NAME: trefle`, so we can easily reference it throughout the rest of our notebook. I am using my Mac's keychain to store and retrieve an access token I have stored for trefle.io.
@@ -452,15 +469,15 @@ If you're curious what talking to the Google Vision api looks like...
 }
 #+end_example
 
-Let's check to see if the first three descriptors come back as plant, tree, or a flower:
+Let's check to see if the first three descriptors come back as plant, tree, or a flower. If it doesn't match these descriptors, then we rerun this codeblock. Warning, this could trap us into an infinite loop.
 #+NAME: image-is-plant-p
 #+BEGIN_SRC emacs-lisp :var response=sanitized-ml-results
-  (contains-description-p
-   (parse-ml-response response)
-   '("plant" "tree" "flower"))
+  (while (not (contains-description-p
+               (parse-ml-response response)
+               '("plant" "tree" "flower")))
+      (org-sbe image-is-plant-p))
+  t
 #+END_SRC
-***** TODO Add section check for predicate returning true
-In this section we will show how to use them result from image-is-plant-p, to check if the image is of a plant like thing and if not rerun the source blocks until we geta result that we expect.
 
 **** A rose by any other name
 We need one last piece of information before we can demonstrate our love of Plants to the world, someone to tweet at. Let's ask ourselves for some input.
@@ -472,7 +489,7 @@ We need one last piece of information before we can demonstrate our love of Plan
 **** Content is king
 Now we need to build our body into something we can process later together...
 #+NAME: twitter-plant-body
-#+BEGIN_SRC emacs-lisp :var plant_name=plant-name plant_image=plant-image twitter_handle=twitter-handle
+#+BEGIN_SRC emacs-lisp :var plant_name=plant-name plant_image=plant-image twitter_handle=twitter-handle valid-image=image-is-plant-p
   (setq twitter-body
    (list
     (cons "status" (concat "" twitter_handle " " plant_name " " (replace-regexp-in-string "'" "" plant_image)))))
@@ -523,7 +540,7 @@ Again, we encody our body and...
          ""))
 #+END_SRC
 
-Voila! We've posted a cute plant...or tree... to Twitter!
+Voila! We've posted a cute plant...or tree...or flower...to Twitter!
 #+BEGIN_SRC restclient :var twitter-headers=twitter-restclient-headers-1 body=twitter-post-body-1
   #
   :body := (concat twitter-json-body)
