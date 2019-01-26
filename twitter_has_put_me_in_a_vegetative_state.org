@@ -1,29 +1,28 @@
-* Twitter has put me in a vegetative state                              :TOC_4:
+* Literate Programming with Orgmode and restclient                    :TOC_4:
   - [[#rest-call-me-maybe][Rest Call Me Maybe]]
   - [[#twitter][Twitter]]
     - [[#helper-functions][Helper functions]]
     - [[#shhh-its-a-secret][Shhh It's a Secret]]
     - [[#lets-work-on-auth][Let's work on Auth]]
       - [[#step-1-generate-a-body][Step 1 Generate a body]]
-      - [[#step-2-creating-and-signing-the-header][Step 2 Creating and Signing the Header]]
-    - [[#step-3-posting-to-twitter][Step 3: Posting To Twitter]]
+      - [[#step-2-generating-some-header-data][Step 2 Generating some header data]]
+      - [[#step-3-creating-the-header][Step 3 Creating The Header]]
+      - [[#step-4-encoding-data-and-posting-to-twitter][Step 4: Encoding Data and Posting To Twitter]]
   - [[#to-11][To 11]]
     - [[#more-helper-functions][More Helper Functions]]
     - [[#demo][Demo]]
       - [[#harvesting-a-name][Harvesting a name]]
       - [[#imagine][Imagine]]
-      - [[#what-will-we-learn-today][What will we learn today?]]
+      - [[#what-shall-we-learn-today][What shall we learn today?]]
       - [[#a-rose-by-any-other-name][A rose by any other name]]
       - [[#content-is-king][Content is king]]
-      - [[#rerun][Rerun]]
+      - [[#preparation-creating-a-new-twitter-header][Preparation, creating a new twitter header.]]
+      - [[#repeat-encoding-data-and-posting-to-twitter][Repeat: Encoding Data and Posting To Twitter]]
 - [[#references][References]]
 
 ** Rest Call Me Maybe
 
-The power and flexibility of Emacs, and its suite of packages, constantly amazes me. I've been a long time fan of `org-mode`. IMO it is great, in Emacs, replacement for Markdown and a number of other document formats. `org-mode` is a great place to practice [[https://www.offerzen.com/blog/literate-programming-empower-your-writing-with-emacs-org-mode][literate programming]], but it's also a great place to an interactive style of programming, like a REPL or a Jupyter Notebook.
-
 Lately, I've spent a lot of time exploring web APIs. I've tried a couple of tools over the years: Postman — back when it was a chrome extension, Curl, and HTTTPie. They were all, ok — they got the job done — but they all ended up missing some feature or some UX. That's when I found [[https://github.com/pashky/restclient.el][restclient]], a package for Emacs with a simple `DSL` and could convert the restclient request to an equivalent `curl` request.
-
 #+BEGIN_SRC restclient
   # Here we will post our base64 encoded secrets to get a bearer token
   POST https://api.twitter.com/oauth2/token
@@ -33,7 +32,7 @@ Lately, I've spent a lot of time exploring web APIs. I've tried a couple of tool
   grant_type=client_credentials
 #+END_SRC
 
-Then once, you've `POSTed` the request a new buffer opens up with the response.
+Then once, you've ~POSTed~ the request a new buffer opens up with the response.
 #+NAME restclient response
 #+begin_example
 {
@@ -65,7 +64,7 @@ Then once, you've `POSTed` the request a new buffer opens up with the response.
 // Request duration: 0.079710s
 #+end_example
 
-Using [[https://www.youtube.com/watch?v=fTvQTMOGJaw][restclient]] as my primary means to play with APIs worked for me for quite awhile. It was a simple to read document, that housed all the requests in a single file, and lived alongside the rest of my code in `git`.
+Using [[https://www.youtube.com/watch?v=fTvQTMOGJaw][restclient]] as my primary means to play with APIs worked for me for quite awhile. It was a simple to read document, that housed all the requests in a single file, and lived alongside the rest of my code in ~git~.
 
 I eventually ran into three complications when using it however:
   1. My request files would become a mess and navigating to find a specific endpoint or a set of endpoints was a pain.
@@ -74,14 +73,18 @@ I eventually ran into three complications when using it however:
        - Once I authenticated, I would have to copy and paste that token from the response buffer into a variable, to use throughout the restclient file.
   3. For exploring APIs I like to take notes, record responses, and record the input.
 
-There was a simple solution for my first and last points, which was to use [[https://www.youtube.com/watch?v=GK3fij-D1G8][org-mode]]. Org-mode has a [[https://orgmode.org/worg/org-contrib/babel/][babel]] extension for [[https://github.com/alf/ob-restclient.el][restclient]]. Babel is an extension that runs code contained in SRC block: `#+BEGIN_SRC...#+END_SRC` and saves any thing sent to STDOUT or value returned and then can be used in other SRC code blocks.
+There was a simple solution for my first and last points, which was to use [[https://www.youtube.com/watch?v=GK3fij-D1G8][org-mode]]. The power and flexibility of Emacs, and its suite of packages, constantly amazes me. I've been a long time fan of ~org-mode~. IMO it is great, in Emacs, replacement for Markdown and a number of other document formats. ~org-mode~ is a great place to practice [[https://www.offerzen.com/blog/literate-programming-empower-your-writing-with-emacs-org-mode][literate programming]], but it's also a great place to an interactive style of programming, like a REPL or a Jupyter Notebook. Org-mode has a [[https://orgmode.org/worg/org-contrib/babel/][babel]] extension for [[https://github.com/alf/ob-restclient.el][restclient]]. Babel is an extension that runs code contained in SRC block: ~#+BEGIN_SRC...#+END_SRC~ and saves any thing sent to STDOUT or value returned and then can be used in other SRC code blocks.
+
+If you've never heard of ~org-mode~, here's three key things to know before going forward:
+  1. If you don't know what ~org-mode~ is, here is a [[https://www.youtube.com/watch?v=lsYdK0C2RvQ][short video]] exploring some of it's features and here is a much [[https://www.youtube.com/watch?v=GK3fij-D1G8][longer video]] on literate programming in Emacs.
+  2. This entire document was written using ~org-mode~ and ~babel~
+  3. You can execute this document yourself, given you change your credentials ;)
 
 ** Twitter
-I think it's useful to see what I am talking about. So, let's see how we can use `org-mode` and `restclient` to authenticate with an `oauth` endpoint.
+A good way to demonstrate the power of restclient and org-mode would be to post some tweets from Emacs. First, we need to be able to authenticate with twitter. So, let’s see how we can use ~org-mode~ and ~restclient~ to authenticate with an ~oauth~ endpoint.
 *** Helper functions
-First we need to define a few functions that we are going to use during OAuth authentication. I could use a library or package for this, but I really hate myself so I want to spend an entire day debugging 403 errors.
 
-
+First we need to define a few functions that we are going to use during OAuth authentication. I could use a library or package for this, but while writing this blog I felt like being a masochist, so I decided I wanted to spend an entire day debugging 403 errors.
 #+BEGIN_SRC emacs-lisp
   (defun twitter-signing-key (consumer-secret token-secret)
     "Creates a signing key by combining the consumer-secret and the token secret and percent encoding the result"
@@ -170,7 +173,7 @@ echo $TWITTER_ACCESS_SECRET
 #+END_SRC
 
 I don't need to store the authentication information in files, and I don't need to rememeber them! I can just use the information that is stored in my environment.
-*** Let's work on Auth
+*** Let's Auth it
 **** Step 1 Generate a body
 
 Before we can do all of the fun authentication bits that is OAuth2, we need to have some content. So, I need to be on brand for an Emacs user and let everyone know I am using Emacs for a purpose that is explicitly not anything to do with text editing.
@@ -182,7 +185,7 @@ Before we can do all of the fun authentication bits that is OAuth2, we need to h
 **** Step 2 Generating some header data
 Ok, now that we have our twitter status, we need to autogenerate a few more pieces of information; a nonce, a timestamp, and the signature.
 
-Emacs doesn't really have a built in crypto library, but do you know who does? Ruby! It's is a fun language with a pretty full featured STL, let's use it to generate our nonce.
+Emacs doesn't really have a built in crypto library, but do you know who does? Ruby! It's is a fun language with a pretty full featured standard library, let's use it to generate our nonce.
 #+NAME: nonce
 #+BEGIN_SRC ruby
 require 'securerandom'
@@ -251,7 +254,7 @@ Next up, we need to build the header, create a string to sign, sign that string 
 #+END_SRC
 
 **** Step 4: Encoding Data and Posting To Twitter
-Up next, our headers need to be in a string format that our `restclient` knows how to read.
+Up next, our headers need to be in a string format that our ~restclient~ knows how to read.
 
 #+NAME: twitter-restclient-headers
 #+BEGIN_SRC emacs-lisp :var header=twitter-headers twitter-oauth-headers=twitter-oauth-headers
@@ -289,7 +292,15 @@ Finally, we take all that work we've done signing things and telling the world h
 
 [[./images/to_11.gif]]
 
-Now that we've seen the basic process for using `restclient` in an interactive literate programming style. Let's see how much further we can take things.
+I think using ~org-mode~ and ~restclient~ to authenticate and post on twitter is a little too mundane. Can we do anything more elaborate?
+
+Why, ofcourse we can! This is Emacs, we pretty much have to do something overly complicated and elaborate.
+
+I'm a big fan of science and I want to share my enthusiasm with the world. So, we're going to use our newly learned skills to talk to several APIs:
+1. To grab a plant's name
+2. Find a picture of that plant
+3. Make sure that the picture we have is of that plant
+4. Tag someone on twitter and share the plant name and picture with them.
 
 *** More Helper Functions
 We need a function to sanitize the response we get from restclient
@@ -336,18 +347,15 @@ Here's a couple of functions we're going to use to help us parse a response from
               :initial-value nil)))
 #+END_SRC
 
-#+RESULTS:
-: contains-description-p
-
 *** Demo
 **** Harvesting a name
-Let's give our source block a name, `#+NAME: trefle`, so we can easily reference it throughout the rest of our notebook. I am using my Mac's keychain to store and retrieve an access token I have stored for trefle.io.
+Let's give our source block a name, ~#+NAME: trefle~, so we can easily reference it throughout the rest of our notebook. I am using my Mac's keychain to store and retrieve an access token I have stored for trefle.io.
 #+NAME: trefle
 #+BEGIN_SRC bash :results output
   security find-generic-password -gws trefle.io
 #+END_SRC
 
-To import a variable from earlier in the file you can use `:var token=trefle` where :var token, specified that you what to insert a variable called token into the proceeding block and the contents of that variable a pull from a block by the name of `trefle`. Now we just need to build the HTTP headers we're going to use for our interaction with trefle.
+To import a variable from earlier in the file you can use ~:var token=trefle~ where :var token, specified that you what to insert a variable called token into the proceeding block and the contents of that variable a pull from a block by the name of ~trefle~. Now we just need to build the HTTP headers we're going to use for our interaction with trefle.
 #+NAME: trefle-headers
 #+BEGIN_SRC emacs-lisp :var token=trefle
   (concat
@@ -496,7 +504,7 @@ Now we need to build our body into something we can process later together...
 #+END_SRC
 
 **** Preparation, creating a new twitter header.
-We can use all of the source blocks we've defined earlier when we were first posted to the twitter API. However, we need to tell it to assign a different variable to body, namely `twitter-plant-body`.
+We can use all of the source blocks we've defined earlier when we were first posted to the twitter API. However, we need to tell it to assign a different variable to body, namely ~twitter-plant-body~.
 #+NAME: twitter-oauth-headers-1
 #+BEGIN_SRC emacs-lisp :var nonce=nonce consumer-key=twitter-consumer-key access-token=twitter-access-token oauth-time=oauth-time body=twitter-plant-body signing-key=signing-key
   (let*
@@ -517,8 +525,8 @@ We can use all of the source blocks we've defined earlier when we were first pos
     (append twitter-oauth-headers (list (cons "oauth_signature"
                                               (url-hexify-string signature)))))
 #+END_SRC
-**** Step 4: Encoding Data and Posting To Twitter
-Similiarly, we need to update what source code block we're generating our `restclient` appropriate header.
+**** Repeat: Encoding Data and Posting To Twitter
+Similiarly, we need to update what source code block we're generating our ~restclient~ appropriate header.
 #+NAME: twitter-restclient-headers-1
 #+BEGIN_SRC emacs-lisp :var header=twitter-headers twitter-oauth-headers=twitter-oauth-headers-1
   (build-twitter-header-string header (sort twitter-oauth-headers
