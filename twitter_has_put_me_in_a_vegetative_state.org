@@ -22,6 +22,9 @@
 
 ** Rest Call Me Maybe
 
+#+BEGIN_QUOTE
+TL;DR Using Emacs and org-mode to demonstrate the power of literate programming when exploring REST APIs.
+#+END_QUOTE
 Lately, I've spent a lot of time exploring web APIs. I've tried a couple of tools over the years: Postman — back when it was a chrome extension, Curl, and HTTPie. They were all, ok — they got the job done — but they all ended up missing some feature or some UX. That's when I found [[https://github.com/pashky/restclient.el][restclient]], a package for Emacs with a simple ~DSL~ and could convert the restclient request to an equivalent ~curl~ request.
 #+BEGIN_SRC restclient
   # Here we will post our base64 encoded secrets to get a bearer token
@@ -80,6 +83,8 @@ If you've never heard of ~org-mode~, here's three key things to know before goin
   2. This entire document was written using ~org-mode~ and ~babel~
   3. You can execute this document yourself, given you change your credentials ;)
 **** TODO create a link to the raw file and create a gist for outlining the requirements for this project
+
+[[./images/org-mode-low-quality.gif]]
 ** Twitter
 A good way to demonstrate the power of ~restclient~ and ~org-mode~ would be to post some tweets from Emacs. First, we need to be able to authenticate with twitter. So, let’s see how we can use ~org-mode~ and ~restclient~ to authenticate with an ~OAuth~ endpoint.
 *** Helper functions
@@ -545,8 +550,6 @@ Voila! We've can post a cute plant...or tree...or flower...to Twitter!
   POST https://api.twitter.com/1.1/statuses/update.json?:body
   :twitter-headers
 #+END_SRC
-
-[[./images/org-mode-low-quality.gif]]
 * References
 1. https://developer.twitter.com/en/docs/basics/authentication/overview/application-only
 2. https://cloud.google.com/vision/docs/request
