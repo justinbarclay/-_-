@@ -81,8 +81,8 @@ I think it's useful to see what I am talking about. So, let's see how we can use
 *** Helper functions
 First we need to define a few functions that we are going to use during OAuth authentication. I could use a library or package for this, but I really hate myself so I want to spend an entire day debugging 403 errors.
 
-#+BEGIN_EXAMPLE org
-,#+BEGIN_SRC emacs-lisp
+
+#+BEGIN_SRC emacs-lisp
   (defun twitter-signing-key (consumer-secret token-secret)
     "Creates a signing key by combining the consumer-secret and the token secret and percent encoding the result"
     (concat
@@ -143,101 +143,94 @@ First we need to define a few functions that we are going to use during OAuth au
             ",")))
        oauth-headers
        " ")
-      ","))
-    "#")
-,#+END_SRC
-#+END_EXAMPLE
+      ",")
+     "\n#"))
+#+END_SRC
+
 *** Shhh It's a Secret
-#+BEGIN_EXAMPLE org
+
 #+NAME: twitter-consumer-key
-,#+BEGIN_SRC bash
+#+BEGIN_SRC bash
 echo $TWITTER_CONSUMER_KEY
-,#+END_SRC
+#+END_SRC
 
 #+NAME: twitter-consumer-secret
-,#+BEGIN_SRC bash
+#+BEGIN_SRC bash
 echo $TWITTER_CONSUMER_SECRET
-,#+END_SRC
+#+END_SRC
 
 #+NAME: twitter-access-token
-,#+BEGIN_SRC bash
+#+BEGIN_SRC bash
 echo $TWITTER_ACCESS_TOKEN
-,#+END_SRC
+#+END_SRC
 
 #+NAME: twitter-access-secret
-,#+BEGIN_SRC bash
+#+BEGIN_SRC bash
 echo $TWITTER_ACCESS_SECRET
-,#+END_SRC
-#+END_EXAMPLE
+#+END_SRC
+
 I don't need to store the authentication information in files, and I don't need to rememeber them! I can just use the information that is stored in my environment.
 *** Let's work on Auth
 **** Step 1 Generate a body
-Before we can do all of the fun authentication bits that is OAuth2, we need to have some content. So, I need to be on brand for an Emacs user and let everyone know I am using Emacs for a purpose that is explicitly not anything to do with text editing.
 
-#+BEGIN_EXAMPLE org
+Before we can do all of the fun authentication bits that is OAuth2, we need to have some content. So, I need to be on brand for an Emacs user and let everyone know I am using Emacs for a purpose that is explicitly not anything to do with text editing.
 #+NAME: hello-world
-,#+BEGIN_SRC emacs-lisp
-(setq twitter-body (list (cons "status" "Hello world! I'm tweeting from Emacs")))
-,#+END_SRC
-#+END_EXAMPLE
-**** Step 2 Creating and Signing the Header
+#+BEGIN_SRC emacs-lisp
+  (setq twitter-body (list (cons "status" "Hello world! I'm tweeting from Emacs")))
+#+END_SRC
+
+**** Step 2 Generating some header data
 Ok, now that we have our twitter status, we need to autogenerate a few more pieces of information; a nonce, a timestamp, and the signature.
 
 Emacs doesn't really have a built in crypto library, but do you know who does? Ruby! It's is a fun language with a pretty full featured STL, let's use it to generate our nonce.
-
-#+BEGIN_EXAMPLE org
 #+NAME: nonce
-,#+BEGIN_SRC ruby
+#+BEGIN_SRC ruby
 require 'securerandom'
 
 nonce = SecureRandom.uuid
 nonce.gsub(/\W/, "")
-,#+END_SRC
-#+END_EXAMPLE
+#+END_SRC
+
 
 Our request is going to need a time signature.
-#+BEGIN_EXAMPLE org
-#+NAME: oauth-time
-,#+BEGIN_SRC emacs-lisp
-  (format-time-string "%s")
-,#+END_SRC
-#+END_EXAMPLE
 
-#+BEGIN_EXAMPLE org
+#+NAME: oauth-time
+#+BEGIN_SRC emacs-lisp
+  (format-time-string "%s")
+#+END_SRC
+
 We need to define the headers that we need for this request.
 #+NAME: twitter-headers
-,#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp
 (list
  (cons "Content-Type" "application/x-www-form-urlencoded"))
-,#+END_SRC
-#+END_EXAMPLE
+#+END_SRC
+
 
 Did I mention emacs built in cryptography is kind of lacking? Well, we'll need to let another language do the heavy lifting when signing the request. I like Node and Node has a decent crypto library built into it. In the example below I am defining a code block as a function that I am going to call later and use it in an emacs-lisp source block.
-#+BEGIN_EXAMPLE org
+
 #+NAME: createSignature
-,#+BEGIN_SRC js :var signature_string="" :var key=""
+#+BEGIN_SRC js :var signature_string="" :var key=""
   let crypto = require('crypto')
 
   let createSignature = (key, text) => {
-    return crypto.createHmac('sha1', key).update(signature_string).digest('binary');
+    return crypto.createHmac('sha1', key).update(signature_string).digest();
   }
 
   return createSignature(key, signature_string).toString('base64');
-,#+END_SRC
-#+END_EXAMPLE
+#+END_SRC
+
 
 Now before we can sign anything, and we *do* need to sign things, we need to create a signing key. We can use our consumer-secret and our access-secret we can build a twitter signing key.
-#+BEGIN_EXAMPLE org
 #+NAME: signing-key
-,#+BEGIN_SRC emacs-lisp :var consumer-secret=twitter-consumer-secret token-secret=twitter-access-secret
+#+BEGIN_SRC emacs-lisp :var consumer-secret=twitter-consumer-secret token-secret=twitter-access-secret
   (twitter-signing-key consumer-secret token-secret)
-,#+END_SRC
-#+END_EXAMPLE
+#+END_SRC
 
+**** Step 3 Creating The Header
 Next up, we need to build the header, create a string to sign, sign that string and them add that signature to our header. Simple.
-#+BEGIN_EXAMPLE org
 #+NAME: twitter-oauth-headers
-,#+BEGIN_SRC emacs-lisp :var nonce=nonce consumer-key=twitter-consumer-key access-token=twitter-access-token oauth-time=oauth-time body=twitter-body signing-key=signing-key
+#+BEGIN_SRC emacs-lisp :var nonce=nonce consumer-key=twitter-consumer-key access-token=twitter-access-token oauth-time=oauth-time body=hello-world signing-key=signing-key
   (let*
       ((twitter-oauth-headers
         (list
@@ -255,24 +248,22 @@ Next up, we need to build the header, create a string to sign, sign that string 
         (org-sbe createSignature (signature_string (eval signature-string)) (key (eval signing-key)))))
     (append twitter-oauth-headers (list (cons "oauth_signature"
                                               (url-hexify-string signature)))))
-,#+END_SRC
-#+END_EXAMPLE
+#+END_SRC
 
-*** Step 3: Posting To Twitter
+**** Step 4: Encoding Data and Posting To Twitter
 Up next, our headers need to be in a string format that our `restclient` knows how to read.
-#+BEGIN_EXAMPLE org
+
 #+NAME: twitter-restclient-headers
-,#+BEGIN_SRC emacs-lisp :var header=twitter-headers twitter-oauth-headers=twitter-oauth-headers
+#+BEGIN_SRC emacs-lisp :var header=twitter-headers twitter-oauth-headers=twitter-oauth-headers
   (build-twitter-header-string header (sort twitter-oauth-headers
                                             (lambda (first second)
                                               (string< (car first) (car second)))))
-,#+END_SRC
-#+END_EXAMPLE
+#+END_SRC
 
 We need to encode our body as a post parameter string to work as a REST client.
-#+BEGIN_EXAMPLE org
+
 #+NAME: twitter-post-body
-,#+BEGIN_SRC emacs-lisp :var twitter-body=hello-world
+#+BEGIN_SRC emacs-lisp :var twitter-body=hello-world
   (setq twitter-json-body
         (concat
          ""
@@ -282,18 +273,17 @@ We need to encode our body as a post parameter string to work as a REST client.
           twitter-body
           "&")
          ""))
-,#+END_SRC
-#+END_EXAMPLE
+#+END_SRC
 
 Finally, we take all that work we've done signing things and telling the world how much we like Emacs, let's end this:
-#+BEGIN_EXAMPLE org
-,#+BEGIN_SRC restclient :var twitter-headers=twitter-restclient-headers twitter-body=twitter-json-body
+
+#+BEGIN_SRC restclient :var twitter-headers=twitter-restclient-headers twitter-body=twitter-post-body
   #
   :body := (concat twitter-json-body)
   POST https://api.twitter.com/1.1/statuses/update.json?:body
   :twitter-headers
-,#+END_SRC
-#+END_EXAMPLE
+#+END_SRC
+
 
 ** To 11
 
@@ -398,7 +388,7 @@ We have a nice list of plant images, let's play google roulette and use the firs
   return "" + JSON.parse(plant_images).items[0].link
 #+END_SRC
 
-**** What will we learn today?
+**** What shall we learn today?
 [[./images/PreciousHoarseFieldspaniel.gif]]
 
 But how can we be sure to trust Google? When we're running our code don't have time to make sure all it does what it is actually supposed to do. Instead, we'll use Machine Learning provided by the fabulous Google to ensure our image is what we expect it to be. We'll ask google for the top 3 labels it has given that image and if it contains a plant like word we'll use it later on.
@@ -481,14 +471,66 @@ We need one last piece of information before we can demonstrate our love of Plan
 
 **** Content is king
 Now we need to build our body into something we can process later together...
-#+NAME: twitter-body
+#+NAME: twitter-plant-body
 #+BEGIN_SRC emacs-lisp :var plant_name=plant-name plant_image=plant-image twitter_handle=twitter-handle
   (setq twitter-body
    (list
     (cons "status" (concat "" twitter_handle " " plant_name " " (replace-regexp-in-string "'" "" plant_image)))))
 #+END_SRC
-**** TODO Rerun
-In this section we copy and paste most of the code we've written for doing all the fun twitter stuff in the second section and use it to post the new content
+
+**** Preparation, creating a new twitter header.
+We can use all of the source blocks we've defined earlier when we were first posted to the twitter API. However, we need to tell it to assign a different variable to body, namely `twitter-plant-body`.
+#+NAME: twitter-oauth-headers-1
+#+BEGIN_SRC emacs-lisp :var nonce=nonce consumer-key=twitter-consumer-key access-token=twitter-access-token oauth-time=oauth-time body=twitter-plant-body signing-key=signing-key
+  (let*
+      ((twitter-oauth-headers
+        (list
+         (cons "oauth_consumer_key" consumer-key)
+         (cons "oauth_nonce" nonce)
+         (cons "oauth_signature_method" "HMAC-SHA1")
+         (cons "oauth_timestamp" oauth-time)
+         (cons "oauth_token" access-token)
+         (cons "oauth_version" "1.0")))
+       (signature-string
+        (twitter-signature-string "POST"
+                                  "https://api.twitter.com/1.1/statuses/update.json"
+                                  (append twitter-oauth-headers twitter-body)))
+       (signature
+        (org-sbe createSignature (signature_string (eval signature-string)) (key (eval signing-key)))))
+    (append twitter-oauth-headers (list (cons "oauth_signature"
+                                              (url-hexify-string signature)))))
+#+END_SRC
+**** Step 4: Encoding Data and Posting To Twitter
+Similiarly, we need to update what source code block we're generating our `restclient` appropriate header.
+#+NAME: twitter-restclient-headers-1
+#+BEGIN_SRC emacs-lisp :var header=twitter-headers twitter-oauth-headers=twitter-oauth-headers-1
+  (build-twitter-header-string header (sort twitter-oauth-headers
+                                            (lambda (first second)
+                                              (string< (car first) (car second)))))
+#+END_SRC
+
+Again, we encody our body and...
+#+NAME: twitter-post-body-1
+#+BEGIN_SRC emacs-lisp
+  (setq twitter-json-body
+        (concat
+         ""
+         (mapconcat
+          (lambda (entry)
+            (concat (car entry) "=" (url-hexify-string (cdr entry))))
+          twitter-body
+          "&")
+         ""))
+#+END_SRC
+
+Voila! We've posted a cute plant...or tree... to Twitter!
+#+BEGIN_SRC restclient :var twitter-headers=twitter-restclient-headers-1 body=twitter-post-body-1
+  #
+  :body := (concat twitter-json-body)
+  POST https://api.twitter.com/1.1/statuses/update.json?:body
+  :twitter-headers
+#+END_SRC
+
 * References
 1. https://developer.twitter.com/en/docs/basics/authentication/overview/application-only
 2. https://cloud.google.com/vision/docs/request
