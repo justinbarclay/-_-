@@ -67,16 +67,16 @@ Then once, you've ~POSTed~ the request a new buffer opens up with the response.
 Using [[https://www.youtube.com/watch?v=fTvQTMOGJaw][restclient]] as my primary means to play with APIs worked for me for quite awhile. It was a simple to read document, that housed all the requests in a single file, and lived alongside the rest of my code in ~git~.
 
 I eventually ran into three complications when using it however:
-  1. My request files would become a mess and navigating to find a specific endpoint or a set of endpoints was a pain.
+  1. My ~restclient~ files would become a mess and navigating to find a specific endpoint or a set of endpoints was a pain.
   2. I was lazy and dealing with authenticated APIs was a pain.
      - I'd need to enter my credentials each time I needed to get a new token
        - Once I authenticated, I would have to copy and paste that token from the response buffer into a variable, to use throughout the restclient file.
   3. For exploring APIs I like to take notes, record responses, and record the input.
 
-There was a simple solution for my first and last points, which was to use [[https://www.youtube.com/watch?v=GK3fij-D1G8][org-mode]]. The power and flexibility of Emacs, and its suite of packages, constantly amazes me. I've been a long time fan of ~org-mode~. IMO it is great, in Emacs, replacement for Markdown and a number of other document formats. ~org-mode~ is a great place to practice [[https://www.offerzen.com/blog/literate-programming-empower-your-writing-with-emacs-org-mode][literate programming]], but it's also a great place to an interactive style of programming, like a REPL or a Jupyter Notebook. Org-mode has a [[https://orgmode.org/worg/org-contrib/babel/][babel]] extension for [[https://github.com/alf/ob-restclient.el][restclient]]. Babel is an extension that runs code contained in SRC block: ~#+BEGIN_SRC...#+END_SRC~ and saves any thing sent to STDOUT or value returned and then can be used in other SRC code blocks.
+There was a simple solution for my first and last points, which was to use [[https://www.youtube.com/watch?v=GK3fij-D1G8][org-mode]]. The power and flexibility of Emacs, and its suite of packages, constantly amazes me. I've been a long time fan of ~org-mode~. IMO it is a great, in Emacs, replacement for Markdown and a number of other document formats. ~org-mode~ is a great place to practice [[https://www.offerzen.com/blog/literate-programming-empower-your-writing-with-emacs-org-mode][literate programming]], but it's also a great place to an interactive style of programming, like a REPL or a Jupyter Notebook. Org-mode has a [[https://orgmode.org/worg/org-contrib/babel/][babel]] extension for [[https://github.com/alf/ob-restclient.el][restclient]]. Babel is an extension that runs code contained in SRC block: ~#+BEGIN_SRC...#+END_SRC~ and saves anything sent to STDOUT or value returned, and then can be used in other SRC code blocks.
 
 If you've never heard of ~org-mode~, here's three key things to know before going forward:
-  1. If you don't know what ~org-mode~ is, here is a [[https://www.youtube.com/watch?v=lsYdK0C2RvQ][short video]] exploring some of it's features and here is a much [[https://www.youtube.com/watch?v=GK3fij-D1G8][longer video]] on literate programming in Emacs.
+  1. If you don't know what ~org-mode~ is, here is a [[https://www.youtube.com/watch?v=lsYdK0C2RvQ][short video]] exploring some of its features and here is a much [[https://www.youtube.com/watch?v=GK3fij-D1G8][longer video]] on literate programming in Emacs.
   2. This entire document was written using ~org-mode~ and ~babel~
   3. You can execute this document yourself, given you change your credentials ;)
 
@@ -84,7 +84,7 @@ If you've never heard of ~org-mode~, here's three key things to know before goin
 A good way to demonstrate the power of restclient and org-mode would be to post some tweets from Emacs. First, we need to be able to authenticate with twitter. So, let’s see how we can use ~org-mode~ and ~restclient~ to authenticate with an ~oauth~ endpoint.
 *** Helper functions
 
-First we need to define a few functions that we are going to use during OAuth authentication. I could use a library or package for this, but while writing this blog I felt like being a masochist, so I decided I wanted to spend an entire day debugging 403 errors.
+First, we need to define a few functions that we are going to use during OAuth authentication. I could use a library or package for this, but while writing this blog I felt like being a masochist, so I decided I wanted to spend an entire day debugging 403 errors.
 #+BEGIN_SRC emacs-lisp
   (defun twitter-signing-key (consumer-secret token-secret)
     "Creates a signing key by combining the consumer-secret and the token secret and percent encoding the result"
@@ -152,6 +152,7 @@ First we need to define a few functions that we are going to use during OAuth au
 
 *** Shhh It's a Secret
 
+I don't need to store the authentication information in files, and I am to lazy to remember or copy and paste then! I can just use the information that is stored in my environment.
 #+NAME: twitter-consumer-key
 #+BEGIN_SRC bash
 echo $TWITTER_CONSUMER_KEY
@@ -171,10 +172,8 @@ echo $TWITTER_ACCESS_TOKEN
 #+BEGIN_SRC bash
 echo $TWITTER_ACCESS_SECRET
 #+END_SRC
-
-I don't need to store the authentication information in files, and I don't need to rememeber them! I can just use the information that is stored in my environment.
 *** Let's Auth it
-**** Step 1 Generate a body
+**** Step 1: Generate a body
 
 Before we can do all of the fun authentication bits that is OAuth2, we need to have some content. So, I need to be on brand for an Emacs user and let everyone know I am using Emacs for a purpose that is explicitly not anything to do with text editing.
 #+NAME: hello-world
@@ -182,8 +181,8 @@ Before we can do all of the fun authentication bits that is OAuth2, we need to h
   (setq twitter-body (list (cons "status" "Hello world! I'm tweeting from Emacs")))
 #+END_SRC
 
-**** Step 2 Generating some header data
-Ok, now that we have our twitter status, we need to autogenerate a few more pieces of information; a nonce, a timestamp, and the signature.
+**** Step 2: Generating some header data
+Ok, now that we have our Twitter status, we need to autogenerate a few more pieces of information; a nonce, a timestamp, and the signature.
 
 Emacs doesn't really have a built in crypto library, but do you know who does? Ruby! It's is a fun language with a pretty full featured standard library, let's use it to generate our nonce.
 #+NAME: nonce
@@ -210,7 +209,7 @@ We need to define the headers that we need for this request.
 #+END_SRC
 
 
-Did I mention emacs built in cryptography is kind of lacking? Well, we'll need to let another language do the heavy lifting when signing the request. I like Node and Node has a decent crypto library built into it. In the example below I am defining a code block as a function that I am going to call later and use it in an emacs-lisp source block.
+Did I mention Emacs built-in cryptography is kind of lacking? Well, we'll need to let another language do the heavy lifting when signing the request. I like Node and Node has a decent crypto library built into it. In the example below I am defining a code block as a function that I am going to call later and use it in an emacs-lisp source block.
 
 #+NAME: createSignature
 #+BEGIN_SRC js :var signature_string="" :var key=""
@@ -224,13 +223,13 @@ Did I mention emacs built in cryptography is kind of lacking? Well, we'll need t
 #+END_SRC
 
 
-Now before we can sign anything, and we *do* need to sign things, we need to create a signing key. We can use our consumer-secret and our access-secret we can build a twitter signing key.
+Now before we can sign anything, and we *do* need to sign things, we need to create a signing key. We can use our consumer-secret and our access-secret to build a Twitter signing key.
 #+NAME: signing-key
 #+BEGIN_SRC emacs-lisp :var consumer-secret=twitter-consumer-secret token-secret=twitter-access-secret
   (twitter-signing-key consumer-secret token-secret)
 #+END_SRC
 
-**** Step 3 Creating The Header
+**** Step 3: Creating The Header
 Next up, we need to build the header, create a string to sign, sign that string and them add that signature to our header. Simple.
 #+NAME: twitter-oauth-headers
 #+BEGIN_SRC emacs-lisp :var nonce=nonce consumer-key=twitter-consumer-key access-token=twitter-access-token oauth-time=oauth-time body=hello-world signing-key=signing-key
@@ -267,7 +266,7 @@ We need to encode our body as a post parameter string to work as a REST client.
 
 #+NAME: twitter-post-body
 #+BEGIN_SRC emacs-lisp :var twitter-body=hello-world
-  (setq twitter-json-body
+  (setq twitter-post-body
         (concat
          ""
          (mapconcat
@@ -278,11 +277,10 @@ We need to encode our body as a post parameter string to work as a REST client.
          ""))
 #+END_SRC
 
-Finally, we take all that work we've done signing things and telling the world how much we like Emacs, let's end this:
-
+Finally, now that we've done all that work to sign things, we can finish it off by tweeting to the world how much we love Emacs.
 #+BEGIN_SRC restclient :var twitter-headers=twitter-restclient-headers twitter-body=twitter-post-body
   #
-  :body := (concat twitter-json-body)
+  :body := (concat twitter-post-body)
   POST https://api.twitter.com/1.1/statuses/update.json?:body
   :twitter-headers
 #+END_SRC
@@ -292,18 +290,18 @@ Finally, we take all that work we've done signing things and telling the world h
 
 [[./images/to_11.gif]]
 
-I think using ~org-mode~ and ~restclient~ to authenticate and post on twitter is a little too mundane. Can we do anything more elaborate?
+I think using ~org-mode~ and ~restclient~ to authenticate and post on Twitter is a little too mundane. Can we do anything more elaborate?
 
-Why, ofcourse we can! This is Emacs, we pretty much have to do something overly complicated and elaborate.
+Why, of course we can! This is Emacs, we pretty much have to do something overly complicated and elaborate.
 
 I'm a big fan of science and I want to share my enthusiasm with the world. So, we're going to use our newly learned skills to talk to several APIs:
 1. To grab a plant's name from trefle.io
 2. Find a picture of that plant, using Google Custom Search
 3. Make sure that the picture we have is of that plant, using Google vision
-4. Tag someone on twitter and share the plant name and picture with them.
+4. Tag someone on Twitter and share the plant name and picture with them.
 
 *** More Helper Functions
-We need a function to sanitize the response we get from restclient
+We need a function to sanitize the response we get from ~restclient~
 #+BEGIN_SRC emacs-lisp
 (defun sanitize-restclient-response (string)
  (string-trim (replace-regexp-in-string "^#\\+BEGIN_SRC js\\|^#\\+END_SRC\\|^//[[:print:]]+" "" string)))
@@ -354,7 +352,7 @@ Let's give our source block a name, ~#+NAME: trefle~, so we can easily reference
   security find-generic-password -gws trefle.io
 #+END_SRC
 
-To import a variable from earlier in the file you can use ~:var token=trefle~ where :var token, specified that you what to insert a variable called token into the proceeding block and the contents of that variable a pull from a block by the name of ~trefle~. Now we just need to build the HTTP headers we're going to use for our interaction with trefle.
+To import a variable from earlier in the file you can use ~:var token=trefle~ where :var token, specified that you what to insert a variable called token into the proceeding block and the contents of that variable a pull from a block by the name of ~trefle~. Now we just need to build the HTTP headers we're going to use for our interaction with ~trefle~.
 #+NAME: trefle-headers
 #+BEGIN_SRC emacs-lisp :var token=trefle
   (concat
@@ -374,7 +372,7 @@ As of the last time I looked, trefle.io has over 4000 pages of plants, so we wan
   #
 #+END_SRC
 
-Before we can do anything with the output we need to clean it up, restclient likes to have all the headers for the response at the bottom of the buffer, so we need to filter those out of the response.
+Before we can do anything with the output we need to clean it up, ~restclient~ likes to have all the headers for the response at the bottom of the buffer, so we need to filter those out of the response.
 #+NAME: sanitized-response
 #+BEGIN_SRC emacs-lisp :var response=plants
 (sanitize-restclient-response response)
@@ -400,13 +398,13 @@ We've got a plant name, now we need image of the plant.
   GET https://content.googleapis.com/customsearch/v1?cx=009341007550343915479%3Afg_hsgzltxw&q=:plant-name&searchType=image&key=:api-key
 #+END_SRC
 
-Much like our search for a plant name, we need to clean up the response from google API so it's easily parsable as JSON.
+Much like our search for a plant name, we need to clean up the response from Google API so it's easily parsable as JSON.
 #+NAME: flower-images
 #+BEGIN_SRC emacs-lisp :var google-images=google-images
   (sanitize-restclient-response google-images)
 #+END_SRC
 
-We have a nice list of plant images, let's play google roulette and use the first image from the search.
+We have a nice list of plant images, let's play Google roulette and use the first image from the search.
 #+NAME: plant-image
 #+BEGIN_SRC js :var plant_images=flower-images :results value drawer
   return "" + JSON.parse(plant_images).items[0].link
@@ -415,7 +413,7 @@ We have a nice list of plant images, let's play google roulette and use the firs
 **** What shall we learn today?
 [[./images/PreciousHoarseFieldspaniel.gif]]
 
-But how can we be sure to trust Google? When we're running our code don't have time to make sure all it does what it is actually supposed to do. Instead, we'll use Machine Learning provided by the fabulous Google to ensure our image is what we expect it to be. We'll ask google for the top 3 labels it has given that image and if it contains a plant like word we'll use it later on.
+But how can we be sure to trust Google? When we're running our code we don't have time to make sure all it does what it is supposed to do. Instead, we'll use machine learning provided by the fabulous Google to ensure our image is what we expect it to be. We'll ask Google for the top 3 labels it has given that image and if it contains a plant-like word, we'll use it later on.
 #+NAME: plant-ml-results
 #+BEGIN_SRC restclient :var api-key=google-api-key plant-image=plant-image
   POST https://vision.googleapis.com/v1/images:annotate?key=:api-key
@@ -445,7 +443,7 @@ But how can we be sure to trust Google? When we're running our code don't have t
 (sanitize-restclient-response response)
 #+END_SRC
 
-If you're curious what talking to the Google Vision api looks like...
+If you're curious what talking to the Google Vision API looks like...
 #+NAME: google-vision-response
 #+begin_example json
 {
@@ -476,7 +474,7 @@ If you're curious what talking to the Google Vision api looks like...
 }
 #+end_example
 
-Let's check to see if the first three descriptors come back as plant, tree, or a flower. If it doesn't match these descriptors, then we rerun this codeblock. Warning, this could trap us into an infinite loop.
+Let's check to see if the first three descriptors come back as plant, tree, or a flower. If it doesn't match these descriptors, then we rerun this codeblock. Warning: this could trap us into an infinite loop.
 #+NAME: image-is-plant-p
 #+BEGIN_SRC emacs-lisp :var response=sanitized-ml-results
   (while (not (contains-description-p
@@ -487,7 +485,7 @@ Let's check to see if the first three descriptors come back as plant, tree, or a
 #+END_SRC
 
 **** A rose by any other name
-We need one last piece of information before we can demonstrate our love of Plants to the world, someone to tweet at. Let's ask ourselves for some input.
+We need one last piece of information before we can demonstrate our love of plants to the world: someone to tweet at. Let's ask ourselves for some input.
 #+NAME: twitter-handle
 #+BEGIN_SRC emacs-lisp
 (read-string "What is the twitter handle of someone you want to tweet? ")
@@ -503,7 +501,7 @@ Now we need to build our body into something we can process later together...
 #+END_SRC
 
 **** Preparation, creating a new twitter header.
-We can use all of the source blocks we've defined earlier when we were first posted to the twitter API. However, we need to tell it to assign a different variable to body, namely ~twitter-plant-body~.
+We can use all of the source blocks we've defined earlier when we were first posted to the Twitter API. However, we need to tell it to assign a different variable to body, namely ~twitter-plant-body~.
 #+NAME: twitter-oauth-headers-1
 #+BEGIN_SRC emacs-lisp :var nonce=nonce consumer-key=twitter-consumer-key access-token=twitter-access-token oauth-time=oauth-time body=twitter-plant-body signing-key=signing-key
   (let*
@@ -525,7 +523,7 @@ We can use all of the source blocks we've defined earlier when we were first pos
                                               (url-hexify-string signature)))))
 #+END_SRC
 **** Repeat: Encoding Data and Posting To Twitter
-Similiarly, we need to update what source code block we're generating our ~restclient~ appropriate header.
+Similiarly, we need to reassign a different variable to twitter-oauth-headers, ~twitter-oauth-headers-1~
 #+NAME: twitter-restclient-headers-1
 #+BEGIN_SRC emacs-lisp :var header=twitter-headers twitter-oauth-headers=twitter-oauth-headers-1
   (build-twitter-header-string header (sort twitter-oauth-headers
@@ -533,10 +531,10 @@ Similiarly, we need to update what source code block we're generating our ~restc
                                               (string< (car first) (car second)))))
 #+END_SRC
 
-Again, we encody our body and...
+Again, we encode our body...
 #+NAME: twitter-post-body-1
 #+BEGIN_SRC emacs-lisp
-  (setq twitter-json-body
+  (setq twitter-post-body
         (concat
          ""
          (mapconcat
@@ -547,10 +545,10 @@ Again, we encody our body and...
          ""))
 #+END_SRC
 
-Voila! We've posted a cute plant...or tree...or flower...to Twitter!
+Voila! We've can post a cute plant...or tree...or flower...to Twitter!
 #+BEGIN_SRC restclient :var twitter-headers=twitter-restclient-headers-1 body=twitter-post-body-1
   #
-  :body := (concat twitter-json-body)
+  :body := (concat twitter-post-body)
   POST https://api.twitter.com/1.1/statuses/update.json?:body
   :twitter-headers
 #+END_SRC
