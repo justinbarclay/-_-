@@ -546,7 +546,7 @@ Voila! We've can post a cute plant...or tree...or flower...to Twitter!
   :twitter-headers
 #+END_SRC
 
-[[./images/org-mode.mp4]]
+[[./images/org-mode-low-quality.gif]]
 * References
 1. https://developer.twitter.com/en/docs/basics/authentication/overview/application-only
 2. https://cloud.google.com/vision/docs/request
