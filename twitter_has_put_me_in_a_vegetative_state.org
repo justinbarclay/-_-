@@ -22,7 +22,7 @@
 
 ** Rest Call Me Maybe
 
-Lately, I've spent a lot of time exploring web APIs. I've tried a couple of tools over the years: Postman — back when it was a chrome extension, Curl, and HTTTPie. They were all, ok — they got the job done — but they all ended up missing some feature or some UX. That's when I found [[https://github.com/pashky/restclient.el][restclient]], a package for Emacs with a simple `DSL` and could convert the restclient request to an equivalent `curl` request.
+Lately, I've spent a lot of time exploring web APIs. I've tried a couple of tools over the years: Postman — back when it was a chrome extension, Curl, and HTTTPie. They were all, ok — they got the job done — but they all ended up missing some feature or some UX. That's when I found [[https://github.com/pashky/restclient.el][restclient]], a package for Emacs with a simple ~DSL~ and could convert the restclient request to an equivalent ~curl~ request.
 #+BEGIN_SRC restclient
   # Here we will post our base64 encoded secrets to get a bearer token
   POST https://api.twitter.com/oauth2/token
@@ -320,7 +320,6 @@ Let's be able to execute an arbitrary source code block
               code-block))
             (org-babel-execute-src-block-maybe)))))
 #+END_SRC
-
 
 Here's a couple of functions we're going to use to help us parse a response from Google's API.
 #+BEGIN_SRC emacs-lisp
