@@ -193,9 +193,7 @@ nonce = SecureRandom.uuid
 nonce.gsub(/\W/, "")
 #+END_SRC
 
-
 Our request is going to need a time signature.
-
 #+NAME: oauth-time
 #+BEGIN_SRC emacs-lisp
   (format-time-string "%s")
@@ -208,9 +206,7 @@ We need to define the headers that we need for this request.
  (cons "Content-Type" "application/x-www-form-urlencoded"))
 #+END_SRC
 
-
 Did I mention Emacs built-in cryptography is kind of lacking? Well, we'll need to let another language do the heavy lifting when signing the request. I like Node and Node has a decent crypto library built into it. In the example below I am defining a code block as a function that I am going to call later and use it in an emacs-lisp source block.
-
 #+NAME: createSignature
 #+BEGIN_SRC js :var signature_string="" :var key=""
   let crypto = require('crypto')
@@ -221,7 +217,6 @@ Did I mention Emacs built-in cryptography is kind of lacking? Well, we'll need t
 
   return createSignature(key, signature_string).toString('base64');
 #+END_SRC
-
 
 Now before we can sign anything, and we *do* need to sign things, we need to create a signing key. We can use our consumer-secret and our access-secret to build a Twitter signing key.
 #+NAME: signing-key
