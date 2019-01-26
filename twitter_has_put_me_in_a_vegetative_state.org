@@ -271,7 +271,7 @@ We need to encode our body as a post parameter string.
          ""))
 #+END_SRC
 
-Finally, now that we've done all that work to formattin and signing things, we can finish it off by tweeting to the world how much we love Emacs.
+Finally, now that we've done all that work to formatting and signing things, we can finish it off by tweeting to the world how much we love Emacs.
 #+BEGIN_SRC restclient :var twitter-headers=twitter-restclient-headers twitter-body=twitter-post-body
   #
   :body := (concat twitter-post-body)
@@ -289,7 +289,7 @@ I think using ~org-mode~ and ~restclient~ to authenticate and post on Twitter is
 Why, of course we can! This is Emacs, we pretty much have to do something overly complicated.
 
 I'm a big fan of science and I want to share my enthusiasm with the world. So, we're going to use our newly learned skills to talk across several APIs. We're going to:
-1. To grab a plant's name from trefle.io
+1. To grab a plant name from trefle.io
 2. Find a picture of that plant, using Google Custom Search
 3. Make sure that the picture we have is of that plant, using Google vision
 4. Tag someone on Twitter and share the plant name and picture with them.
@@ -391,7 +391,7 @@ We've got a plant name, now we need image of the plant.
   GET https://content.googleapis.com/customsearch/v1?cx=009341007550343915479%3Afg_hsgzltxw&q=:plant-name&searchType=image&key=:api-key
 #+END_SRC
 
-Much like our search for a plant name, we need to clean up the response from Google API so it's easily parsable as JSON.
+Much like our search for a plant name, we need to clean up the response from Google API so it's easily parseable as JSON.
 #+NAME: flower-images
 #+BEGIN_SRC emacs-lisp :var google-images=google-images
   (sanitize-restclient-response google-images)
@@ -467,7 +467,7 @@ If you're curious what talking to the Google Vision API looks like...
 }
 #+end_example
 
-Let's check to see if the first three descriptors come back as plant, tree, or a flower. If it doesn't match these descriptors, then we rerun this codeblock. Warning: this could trap us into an infinite loop.
+Let's check to see if the first three descriptors come back as plant, tree, or a flower. If it doesn't match these descriptors, then we rerun this code block. Warning: this could trap us into an infinite loop.
 #+NAME: image-is-plant-p
 #+BEGIN_SRC emacs-lisp :var response=sanitized-ml-results
   (while (not (contains-description-p
