@@ -64,13 +64,13 @@ Then once, you've ~POSTed~ the request a new buffer opens up with the response.
 // Request duration: 0.079710s
 #+end_example
 
-Using [[https://www.youtube.com/watch?v=fTvQTMOGJaw][restclient]] as my primary means to play with APIs worked for me for quite awhile. It was a simple to read document, that housed all the requests in a single file, and lived alongside the rest of my code in ~git~.
+Using [[https://www.youtube.com/watch?v=fTvQTMOGJaw][restclient]] as my primary means to play with APIs worked for me for quite a while. It was a simple to read document, that housed all the requests in a single file, and lived alongside the rest of my code in ~git~.
 
 I eventually ran into three complications when using it however:
   1. My ~restclient~ files would become a mess and navigating to find a specific endpoint or a set of endpoints was a pain.
   2. I was lazy and dealing with authenticated APIs was a pain.
      - I'd need to enter my credentials each time I needed to get a new token
-       - Once I authenticated, I would have to copy and paste that token from the response buffer into a variable, to use throughout the restclient file.
+     - Once I authenticated, I would have to copy and paste that token from the response buffer into a variable, to use throughout the restclient file.
   3. For exploring APIs I like to take notes, record responses, and record the input.
 
 There was a simple solution for my first and last points, which was to use [[https://www.youtube.com/watch?v=GK3fij-D1G8][org-mode]]. The power and flexibility of Emacs, and its suite of packages, constantly amazes me. I've been a long time fan of ~org-mode~. IMO it is a great, in Emacs, replacement for Markdown and a number of other document formats. ~org-mode~ is a great place to practice [[https://www.offerzen.com/blog/literate-programming-empower-your-writing-with-emacs-org-mode][literate programming]], but it's also a great place to an interactive style of programming, like a REPL or a Jupyter Notebook. Org-mode has a [[https://orgmode.org/worg/org-contrib/babel/][babel]] extension for [[https://github.com/alf/ob-restclient.el][restclient]]. Babel is an extension that runs code contained in SRC block: ~#+BEGIN_SRC...#+END_SRC~ and saves anything sent to STDOUT or value returned, and then can be used in other SRC code blocks.
@@ -175,16 +175,16 @@ echo $TWITTER_ACCESS_SECRET
 *** Let's Auth it
 **** Step 1: Generate a body
 
-Before we can do all of the fun authentication bits that is ~OAuth2~, we need to have some content. So, I feel like I need to be on brand for an Emacs user and let everyone know I am using Emacs for something that isn't editing text.
+Before we can do all the fun authentication bits that is ~OAuth2~, we need to have some content. So, I feel like I need to be on brand for an Emacs user and let everyone know I am using Emacs for something that isn't editing text.
 #+NAME: hello-world
 #+BEGIN_SRC emacs-lisp
   (setq twitter-body (list (cons "status" "Hello world! I'm tweeting from Emacs")))
 #+END_SRC
 
 **** Step 2: Generating some header data
-Ok, now that we have our Twitter status, we need to autogenerate a few more pieces of information; a nonce, a timestamp, and the signature.
+Ok, now that we have our Twitter status, we need to auto generate a few more pieces of information; a nonce, a timestamp, and the signature.
 
-Emacs doesn't really have a built in crypto library, but do you know who does? Ruby! It's is a fun language with a pretty full featured standard library, let's use it to generate our nonce.
+Emacs doesn't really have a built in crypto library, but do you know who does? Ruby! It is a fun language with a pretty full featured standard library, let's use it to generate our nonce.
 #+NAME: nonce
 #+BEGIN_SRC ruby
 require 'securerandom'
@@ -436,7 +436,7 @@ When we're running our code we don't have time to make sure all it does what it 
 (sanitize-restclient-response response)
 #+END_SRC
 
-If you're curious what talking to the Google Vision API looks like...
+If you're curious what talking to the Google Vision API looks like, here it is.
 #+NAME: google-vision-response
 #+begin_example json
 {
@@ -494,7 +494,7 @@ Now we need to build our body into something we can process later together...
 #+END_SRC
 
 *** Preparation, creating a new twitter header.
-We can use all of the source blocks we created back when we were professing our love for Emacs. However, we need to change a few reference. In the source block below we need to change the reference from ~body=hello-world~ to ~body=twitter-plant-body~.
+We can use all of the source blocks we created back when we were professing our love for Emacs. However, we need to change a few references. In the source block below we need to change the reference from ~body=hello-world~ to ~body=twitter-plant-body~.
 #+NAME: twitter-oauth-headers-plants
 #+BEGIN_SRC emacs-lisp :var nonce=nonce consumer-key=twitter-consumer-key access-token=twitter-access-token oauth-time=oauth-time body=twitter-plant-body signing-key=signing-key
   (let*
