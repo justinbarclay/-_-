@@ -3,7 +3,7 @@
   - [[#twitter][Twitter]]
     - [[#helper-functions][Helper functions]]
     - [[#shhh-its-a-secret][Shhh It's a Secret]]
-    - [[#lets-work-on-auth][Let's work on Auth]]
+    - [[#lets-auth-it][Let's Auth it]]
       - [[#step-1-generate-a-body][Step 1 Generate a body]]
       - [[#step-2-generating-some-header-data][Step 2 Generating some header data]]
       - [[#step-3-creating-the-header][Step 3 Creating The Header]]
@@ -297,9 +297,9 @@ I think using ~org-mode~ and ~restclient~ to authenticate and post on twitter is
 Why, ofcourse we can! This is Emacs, we pretty much have to do something overly complicated and elaborate.
 
 I'm a big fan of science and I want to share my enthusiasm with the world. So, we're going to use our newly learned skills to talk to several APIs:
-1. To grab a plant's name
-2. Find a picture of that plant
-3. Make sure that the picture we have is of that plant
+1. To grab a plant's name from trefle.io
+2. Find a picture of that plant, using Google Custom Search
+3. Make sure that the picture we have is of that plant, using Google vision
 4. Tag someone on twitter and share the plant name and picture with them.
 
 *** More Helper Functions
