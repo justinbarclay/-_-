@@ -69,7 +69,7 @@ Then once, you've ~POSTed~ the request a new buffer opens up with the response.
 
 Using [[https://www.youtube.com/watch?v=fTvQTMOGJaw][restclient]] as my primary means to play with APIs worked for me for quite a while. It was a simple to read document, that housed all the requests in a single file, and lived alongside the rest of my code in ~git~.
 
-I eventually ran into three complications when using it however:
+However, I eventually ran into three complications when using it:
   1. My ~restclient~ files would become a mess and navigating to find a specific endpoint or a set of endpoints was a pain.
   2. I was lazy and dealing with authenticated APIs was a pain.
      - I'd need to enter my credentials each time I needed to get a new token
@@ -86,7 +86,7 @@ If you've never heard of ~org-mode~, here's three key things to know before goin
 
 [[./images/org-mode-low-quality.gif]]
 ** Twitter
-A good way to demonstrate the power of ~restclient~ and ~org-mode~ would be to post some tweets from Emacs. First, we need to be able to authenticate with twitter. So, let’s see how we can use ~org-mode~ and ~restclient~ to authenticate with an ~OAuth~ endpoint.
+A good way to demonstrate the power of ~restclient~ and ~org-mode~ would be to post some tweets from Emacs. First, we need to be able to authenticate with Twitter. So, let’s see how we can use ~org-mode~ and ~restclient~ to authenticate with an ~OAuth~ endpoint.
 *** Helper functions
 
 First, we need to define a few functions that we are going to use during OAuth authentication. I could use a library or package for this, but when I am writing I become somewhat of a masochist.
@@ -189,7 +189,7 @@ Before we can do all the fun authentication bits that is ~OAuth2~, we need to ha
 **** Step 2: Generating some header data
 Ok, now that we have our Twitter status, we need to auto generate a few more pieces of information; a nonce, a timestamp, and the signature.
 
-Emacs doesn't really have a built in crypto library, but do you know who does? Ruby! It is a fun language with a pretty full featured standard library, let's use it to generate our nonce.
+Emacs doesn't really have a built in crypto library, but do you know who does? Ruby! It is a fun language with a pretty full featured standard library; let's use it to generate our nonce.
 #+NAME: nonce
 #+BEGIN_SRC ruby
 require 'securerandom'
@@ -350,7 +350,7 @@ Let's give our source block a name, ~#+NAME: trefle~, so we can easily reference
   security find-generic-password -gws trefle.io
 #+END_SRC
 
-To import a variable from earlier in the file you can use ~:var token=trefle~ where :var token, specified that you what to insert a variable called token into the proceeding block and the contents of that variable a pull from a block by the name of ~trefle~. Now we just need to build the HTTP headers we're going to use for our interaction with ~trefle~.
+To import a variable from earlier in the file you can use ~:var token=trefle~ where :var token, specifies that you what to insert a variable called token into the proceeding block and the contents of that variable are pulled from a block by the name of ~trefle~. Now we just need to build the HTTP headers we're going to use for our interaction with ~trefle~.
 #+NAME: trefle-headers
 #+BEGIN_SRC emacs-lisp :var token=trefle
   (concat
@@ -390,7 +390,7 @@ I need to get my Google API key, for this I've been lazy and have just been stor
   echo $GOOGLE_API_KEY
 #+END_SRC
 
-We've got a plant name, now we need image of the plant.
+We've got a plant name, now we need an image of the plant.
 #+NAME: google-images
 #+BEGIN_SRC restclient :var api-key=google-api-key plant-name=plant-name
   GET https://content.googleapis.com/customsearch/v1?cx=009341007550343915479%3Afg_hsgzltxw&q=:plant-name&searchType=image&key=:api-key
@@ -411,7 +411,7 @@ We have a nice list of plant images, let's play Google roulette and use the firs
 *** What shall we learn today?
 [[./images/PreciousHoarseFieldspaniel.gif]]
 
-When we're running our code we don't have time to make sure all it does what it is supposed to do and everyone knows you can't trust Google. Instead, we'll use machine learning provided by the fabulous Google to validate our choice. We'll ask Google for them top 3 labels for an image and see if those labels contain the words "Flower", "Plant", or "Tree".
+When we're running our code we don't have time to make sure all it does what it is supposed to do and everyone knows you can't trust Google. Instead, we'll use machine learning provided by the fabulous Google Vision API to validate our choice. We'll ask Google for the top 3 labels for an image and see if those labels contain the words "Flower", "Plant", or "Tree".
 #+NAME: plant-ml-results
 #+BEGIN_SRC restclient :var api-key=google-api-key plant-image=plant-image
   POST https://vision.googleapis.com/v1/images:annotate?key=:api-key
@@ -498,7 +498,7 @@ Now we need to build our body into something we can process later together...
     (cons "status" (concat "" twitter_handle " " plant_name " " (replace-regexp-in-string "'" "" plant_image)))))
 #+END_SRC
 
-*** Preparation, creating a new twitter header.
+*** Preparation, creating a new Twitter header.
 We can use all of the source blocks we created back when we were professing our love for Emacs. However, we need to change a few references. In the source block below we need to change the reference from ~body=hello-world~ to ~body=twitter-plant-body~.
 #+NAME: twitter-oauth-headers-plants
 #+BEGIN_SRC emacs-lisp :var nonce=nonce consumer-key=twitter-consumer-key access-token=twitter-access-token oauth-time=oauth-time body=twitter-plant-body signing-key=signing-key
