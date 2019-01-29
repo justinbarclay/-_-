@@ -23,8 +23,9 @@
 ** Rest Call Me Maybe
 
 #+BEGIN_QUOTE
-TL;DR Using Emacs and org-mode to demonstrate the power of literate programming when exploring REST APIs.
+TL;DR Other HTTP Clients aren’t that great. Here we use Emacs and restclient, with public APIs, to identify plants and share on Twitter. Emacs and restclient offer a great user experience and workflow when documenting and exploring APIs.
 #+END_QUOTE
+
 Lately, I've spent a lot of time exploring web APIs. I've tried a couple of tools over the years: Postman — back when it was a chrome extension, Curl, and HTTPie. They were all, ok — they got the job done — but they all ended up missing some feature or some UX. That's when I found [[https://github.com/pashky/restclient.el][restclient]], a package for Emacs with a simple ~DSL~ and could convert the restclient request to an equivalent ~curl~ request.
 #+BEGIN_SRC restclient
   # Here we will post our base64 encoded secrets to get a bearer token
@@ -82,9 +83,16 @@ If you've never heard of ~org-mode~, here's three key things to know before goin
   1. If you don't know what ~org-mode~ is, here is a [[https://www.youtube.com/watch?v=lsYdK0C2RvQ][short video]] exploring some of its features and here is a much [[https://www.youtube.com/watch?v=GK3fij-D1G8][longer video]] on literate programming in Emacs
   2. This entire document was written using ~org-mode~ and ~babel~
   3. You can execute this document yourself, given you change your credentials ;)
-**** TODO create a link to the raw file and create a gist for outlining the requirements for this project
-
 [[./images/org-mode-low-quality.gif]]
+
+*** Follow along at home!
+If you would like run arbitrary elisp, you can download the following file in Emacs or your favourite flavour of Vim.
+#+BEGIN_SRC elisp
+  (browse-url-emacs "https://raw.githubusercontent.com/justinbarclay/-_-/master/twitter_has_put_me_in_a_vegetative_state.org")
+#+END_SRC
+
+Of course, you need to go out and download ~restclient~ and ~ob-restclient~ and thats it, thats all the emacs packages you need. Oh... also NodeJS and Ruby, don't @ me. Ok @ me, I'm lonely.
+
 ** Twitter
 A good way to demonstrate the power of ~restclient~ and ~org-mode~ would be to post some tweets from Emacs. First, we need to be able to authenticate with Twitter. So, let’s see how we can use ~org-mode~ and ~restclient~ to authenticate with an ~OAuth~ endpoint.
 *** Helper functions
@@ -550,8 +558,13 @@ Voila! We've can post a cute plant...or tree...or flower...to Twitter!
   POST https://api.twitter.com/1.1/statuses/update.json?:body
   :twitter-headers
 #+END_SRC
+
+** In conclusive
+You don't need to use Emacs to enjoy the benefits of literate programming across 4 disparate APIs, to do that all you really need is bubblegum and determination. However, literate programming is a great paradigm to create and share your work for your coworkers or others to use and extend. I think Emacs and in particular, ~org-mode~, is great for literate programming because it's a lot like [[https://jupyter.org/][Jupyter Notebooks]], it supports a lot more languages and supports more than one language per notebook. Plus, ~org-mode~ works wonderfully with the two best [[http://spacemacs.org/][flavours]] of [[https://github.com/hlissner/doom-emacs][Vim]]!
+
 * References
 1. https://developer.twitter.com/en/docs/basics/authentication/overview/application-only
 2. https://cloud.google.com/vision/docs/request
 3. https://developer.twitter.com/en/docs/tweets/post-and-engage/api-reference/post-statuses-update.html
-4. http://lti.tools/oauth/
+4. https://developers.google.com/custom-search/docs/overview
+5. http://lti.tools/oauth/
