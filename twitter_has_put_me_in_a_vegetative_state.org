@@ -93,7 +93,7 @@ If you would like run arbitrary elisp, you can download the following file in Em
   (browse-url-emacs "https://raw.githubusercontent.com/justinbarclay/-_-/master/twitter_has_put_me_in_a_vegetative_state.org")
 #+END_SRC
 
-Of course, you need to go out and download ~restclient~ and ~ob-restclient~ and thats it, thats all the emacs packages you need. Oh... also NodeJS and Ruby, don't @ me. Ok @ me, I'm lonely.
+Of course, you need to go out and download ~restclient~ and ~ob-restclient~ and thats it, thats all the Emacs packages you need. Oh... also NodeJS and Ruby, don't @ me. Ok @ me, I'm lonely.
 
 ** Twitter
 A good way to demonstrate the power of ~restclient~ and ~org-mode~ would be to post some tweets from Emacs. First, we need to be able to authenticate with Twitter. So, let’s see how we can use ~org-mode~ and ~restclient~ to authenticate with an ~OAuth~ endpoint.
