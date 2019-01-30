@@ -83,6 +83,8 @@ If you've never heard of ~org-mode~, here's three key things to know before goin
   1. If you don't know what ~org-mode~ is, here is a [[https://www.youtube.com/watch?v=lsYdK0C2RvQ][short video]] exploring some of its features and here is a much [[https://www.youtube.com/watch?v=GK3fij-D1G8][longer video]] on literate programming in Emacs
   2. This entire document was written using ~org-mode~ and ~babel~
   3. You can execute this document yourself, given you change your credentials ;)
+
+#+CAPTION: Tweeting using literate programming and Emacs
 [[./images/org-mode-low-quality.gif]]
 
 *** Follow along at home!
