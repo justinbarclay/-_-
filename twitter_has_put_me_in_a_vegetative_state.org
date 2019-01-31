@@ -80,24 +80,24 @@ However, I eventually ran into three complications when using it:
 
 There was a simple solution for my first and last points, which was to use [[https://www.youtube.com/watch?v=GK3fij-D1G8][org-mode]]. The power and flexibility of Emacs, and its suite of packages, constantly amazes me. I've been a long-time fan of org-mode. In my opinion it is a great replacement for Markdown and a number of other document formats in Emacs. I've found that org-mode is a great place to practice [[https://www.offerzen.com/blog/literate-programming-empower-your-writing-with-emacs-org-mode][literate programming]], but it's also a great place to an interactive style of programming, like a REPL or a Jupyter Notebook. Org-mode has a [[https://orgmode.org/worg/org-contrib/babel/][babel]] extension for [[https://github.com/alf/ob-restclient.el][restclient]]. Babel is an extension that runs code contained in SRC block: ~#+BEGIN_SRC...#+END_SRC~ and saves anything sent to STDOUT or value returned, and then can be used in other SRC code blocks.
 
-If you've never heard of ~org-mode~, here's three key things to know before going forward:
+If you've never heard of org-mode, here's three key things to know before going forward:
   1. Here is a [[https://www.youtube.com/watch?v=lsYdK0C2RvQ][short video]] exploring some of its features and here is a much [[https://www.youtube.com/watch?v=GK3fij-D1G8][longer video]] on literate programming in Emacs
-  2. This entire document was written using ~org-mode~ and ~babel~
+  2. This entire document was written using org-mode and babel
   3. You can execute this document yourself, given you change your credentials ;)
 
 #+CAPTION: Tweeting using literate programming and Emacs
 [[./images/org-mode-low-quality.gif]]
 
 *** Follow along at home!
-If you would like run arbitrary elisp, you can download the following file in Emacs or your favourite flavour of Vim.
+If you would like run arbitrary elisp at home, you can download the following file in Emacs or your favourite [[http://spacemacs.org/][flavours]] of [[https://github.com/hlissner/doom-emacs][Vim]].
 #+BEGIN_SRC elisp
   (browse-url-emacs "https://raw.githubusercontent.com/justinbarclay/-_-/master/twitter_has_put_me_in_a_vegetative_state.org")
 #+END_SRC
 
-Of course, you need to go out and download ~restclient~ and ~ob-restclient~ and thats it, thats all the Emacs packages you need. Oh... also NodeJS and Ruby, don't @ me. Ok @ me, I'm lonely.
+Of course, you need to go out and download restclient and ob-restclient and thats it, thats all the Emacs packages you need. Oh... also NodeJS and Ruby, don't @ me. Ok @ me, I'm lonely.
 
 ** Twitter
-A good way to demonstrate the power of ~restclient~ and ~org-mode~ would be to post some tweets from Emacs. First, we need to be able to authenticate with Twitter. So, let’s see how we can use ~org-mode~ and ~restclient~ to authenticate with an ~OAuth~ endpoint.
+A good way to demonstrate the power of restclient and org-mode would be to post some tweets from Emacs. First, we need to be able to authenticate with Twitter. So, let’s see how we can use org-mode and restclient to authenticate with an OAuth endpoint.
 *** Helper functions
 
 First, we need to define a few functions that we are going to use during OAuth authentication. I could use a library or package for this, but when I am writing I become somewhat of a masochist.
@@ -193,7 +193,7 @@ echo $TWITTER_ACCESS_SECRET
 *** Let's Auth it
 **** Step 1: Generate a body
 
-Before we can do all the fun authentication bits that is ~OAuth2~, we need to have some content. So, I feel like I need to be on brand for an Emacs user and let everyone know I am using Emacs for something that isn't editing text.
+Before we can do all the fun authentication bits that is OAuth, we need to have some content. So, I feel like I need to be on brand for an Emacs user and let everyone know I am using Emacs for something that isn't editing text.
 #+NAME: hello-world
 #+BEGIN_SRC emacs-lisp
   (setq twitter-body (list (cons "status" "Hello world! I'm tweeting from Emacs")))
@@ -304,7 +304,7 @@ Finally, now that we've done all that work to format and sign things, we can fin
 
 [[./images/to_11.gif]]
 
-I think using ~org-mode~ and ~restclient~ to authenticate and post on Twitter is a little too mundane. Can we do anything more elaborate?
+I think using org-mode and restclient to authenticate and post on Twitter is a little too mundane. Can we do anything more elaborate?
 
 Why, of course we can! This is Emacs, we pretty much have to do something overly complicated.
 
@@ -315,7 +315,7 @@ I'm a big fan of science and I want to share my enthusiasm with the world. So, w
 4. Tag someone on Twitter and share the plant name and picture with them
 
 *** More Helper Functions
-We need a function to sanitize the response we get from ~restclient~
+We need a function to sanitize the response we get from restclient
 #+BEGIN_SRC emacs-lisp
   (defun sanitize-restclient-response (string)
    "Trim down a restclient response to JSON, removing the org source block and
