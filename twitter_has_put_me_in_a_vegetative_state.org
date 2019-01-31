@@ -246,23 +246,25 @@ Now before we can sign anything, and we *do* need to sign things, we need to cre
 Next up, we need to build the header, create a string to sign, sign that string, and then add that signature to our header. Simple.
 #+NAME: twitter-oauth-headers
 #+BEGIN_SRC emacs-lisp :var nonce=nonce consumer-key=twitter-consumer-key access-token=twitter-access-token oauth-time=oauth-time body=hello-world signing-key=signing-key
-  (let*
-      ((twitter-oauth-headers
-        (list
-         (cons "oauth_consumer_key" consumer-key)
-         (cons "oauth_nonce" nonce)
-         (cons "oauth_signature_method" "HMAC-SHA1")
-         (cons "oauth_timestamp" oauth-time)
-         (cons "oauth_token" access-token)
-         (cons "oauth_version" "1.0")))
-       (signature-string
-        (twitter-signature-string "POST"
-                                  "https://api.twitter.com/1.1/statuses/update.json"
-                                  (append twitter-oauth-headers twitter-body)))
-       (signature
-        (org-sbe createSignature (signature_string (eval signature-string)) (key (eval signing-key))))) ;; Here I am calling that signing function that I defined in NodeJS
-    (append twitter-oauth-headers (list (cons "oauth_signature"
-                                              (url-hexify-string signature)))))
+    (let*
+        ((twitter-oauth-headers
+          (list
+           (cons "oauth_consumer_key" consumer-key)
+           (cons "oauth_nonce" nonce)
+           (cons "oauth_signature_method" "HMAC-SHA1")
+           (cons "oauth_timestamp" oauth-time)
+           (cons "oauth_token" access-token)
+           (cons "oauth_version" "1.0")))
+         (signature-string
+          (twitter-signature-string "POST"
+                                    "https://api.twitter.com/1.1/statuses/update.json"
+                                    (append twitter-oauth-headers twitter-body)))
+         (signature
+          (org-sbe createSignature
+                   (signature_string (eval signature-string))
+                   (key (eval signing-key))))) ;; Here I am calling that signing function that I defined in NodeJS
+      (append twitter-oauth-headers (list (cons "oauth_signature"
+                                                (url-hexify-string signature)))))
 #+END_SRC
 
 **** Step 4: Encoding Data and Posting To Twitter
