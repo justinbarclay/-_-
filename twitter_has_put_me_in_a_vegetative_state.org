@@ -26,9 +26,10 @@
 TL;DR Other HTTP Clients aren’t that great. Here we use Emacs and restclient, with public APIs, to identify plants and share on Twitter. Emacs and restclient offer a great user experience and workflow when documenting and exploring APIs.
 #+END_QUOTE
 
-Lately, I've spent a lot of time exploring web APIs. I've tried a couple of tools over the years: Postman — back when it was a chrome extension, Curl, and HTTPie. They were all, ok — they got the job done — but they all ended up missing some feature or some UX. That's when I found [[https://github.com/pashky/restclient.el][restclient]], a package for Emacs with a simple ~DSL~ and could convert the restclient request to an equivalent ~curl~ request.
+Lately, I've spent a lot of time exploring web APIs. I've tried a couple of tools over the years: Postman back when it was a chrome extension, Curl, and HTTPie. They were all, ok — they got the job done — but they all ended up missing some feature or some UX. That's when I found [[https://github.com/pashky/restclient.el][restclient]], a package for Emacs with a simple DSL, and could convert the restclient request to an equivalent ~curl~ request.
+
+Let's take a look at an example of what restclient looks like when authenticating with twitter. Here we will post our base64 encoded secrets to get a bearer token:
 #+BEGIN_SRC restclient
-  # Here we will post our base64 encoded secrets to get a bearer token
   POST https://api.twitter.com/oauth2/token
   Authorization: Basic QmRUTklkSEI5WWZHbVhwSkZ6NTZManpUNjpBMk1rOHJjaVdEWFdva3FCN1pmemZFdEk3WjRNd1lpM3JFSjhzN1JoVm9xMXhZY2pMbQ==
   Content-Type: application/x-www-form-urlencoded;charset=UTF-8
@@ -36,7 +37,7 @@ Lately, I've spent a lot of time exploring web APIs. I've tried a couple of tool
   grant_type=client_credentials
 #+END_SRC
 
-Then once, you've ~POSTed~ the request a new buffer opens up with the response.
+Then once, you've POSTed the request a new buffer opens up with the response.
 #+NAME restclient response
 #+begin_example
 {
@@ -68,19 +69,19 @@ Then once, you've ~POSTed~ the request a new buffer opens up with the response.
 // Request duration: 0.079710s
 #+end_example
 
-Using [[https://www.youtube.com/watch?v=fTvQTMOGJaw][restclient]] as my primary means to play with APIs worked for me for quite a while. It was a simple to read document, that housed all the requests in a single file, and lived alongside the rest of my code in ~git~.
+Using [[https://www.youtube.com/watch?v=fTvQTMOGJaw][restclient]] as my primary means to play with APIs worked for me for quite a while. It was a easy-to-read document, that housed all the requests in a single file, and lived alongside the rest of my code in git.
 
 However, I eventually ran into three complications when using it:
-  1. My ~restclient~ files would become a mess and navigating to find a specific endpoint or a set of endpoints was a pain.
-  2. I was lazy and dealing with authenticated APIs was a pain.
+  1. My restclient files would become a mess and navigating to find a specific endpoint or a set of endpoints was a pain.
+  2. ~I am lazy and dealing with authenticated APIs was a pain.~
      - I'd need to enter my credentials each time I needed to get a new token
      - Once I authenticated, I would have to copy and paste that token from the response buffer into a variable, to use throughout the restclient file.
   3. For exploring APIs I like to take notes, record responses, and record the input.
 
-There was a simple solution for my first and last points, which was to use [[https://www.youtube.com/watch?v=GK3fij-D1G8][org-mode]]. The power and flexibility of Emacs, and its suite of packages, constantly amazes me. I've been a long time fan of ~org-mode~. IMO it is a great replacement for Markdown and a number of other document formats, in Emacs. ~org-mode~ is a great place to practice [[https://www.offerzen.com/blog/literate-programming-empower-your-writing-with-emacs-org-mode][literate programming]], but it's also a great place to an interactive style of programming, like a REPL or a Jupyter Notebook. Org-mode has a [[https://orgmode.org/worg/org-contrib/babel/][babel]] extension for [[https://github.com/alf/ob-restclient.el][restclient]]. Babel is an extension that runs code contained in SRC block: ~#+BEGIN_SRC...#+END_SRC~ and saves anything sent to STDOUT or value returned, and then can be used in other SRC code blocks.
+There was a simple solution for my first and last points, which was to use [[https://www.youtube.com/watch?v=GK3fij-D1G8][org-mode]]. The power and flexibility of Emacs, and its suite of packages, constantly amazes me. I've been a long-time fan of org-mode. In my opinion it is a great replacement for Markdown and a number of other document formats in Emacs. I've found that org-mode is a great place to practice [[https://www.offerzen.com/blog/literate-programming-empower-your-writing-with-emacs-org-mode][literate programming]], but it's also a great place to an interactive style of programming, like a REPL or a Jupyter Notebook. Org-mode has a [[https://orgmode.org/worg/org-contrib/babel/][babel]] extension for [[https://github.com/alf/ob-restclient.el][restclient]]. Babel is an extension that runs code contained in SRC block: ~#+BEGIN_SRC...#+END_SRC~ and saves anything sent to STDOUT or value returned, and then can be used in other SRC code blocks.
 
 If you've never heard of ~org-mode~, here's three key things to know before going forward:
-  1. If you don't know what ~org-mode~ is, here is a [[https://www.youtube.com/watch?v=lsYdK0C2RvQ][short video]] exploring some of its features and here is a much [[https://www.youtube.com/watch?v=GK3fij-D1G8][longer video]] on literate programming in Emacs
+  1. Here is a [[https://www.youtube.com/watch?v=lsYdK0C2RvQ][short video]] exploring some of its features and here is a much [[https://www.youtube.com/watch?v=GK3fij-D1G8][longer video]] on literate programming in Emacs
   2. This entire document was written using ~org-mode~ and ~babel~
   3. You can execute this document yourself, given you change your credentials ;)
 
@@ -102,7 +103,8 @@ A good way to demonstrate the power of ~restclient~ and ~org-mode~ would be to p
 First, we need to define a few functions that we are going to use during OAuth authentication. I could use a library or package for this, but when I am writing I become somewhat of a masochist.
 #+BEGIN_SRC emacs-lisp
   (defun twitter-signing-key (consumer-secret token-secret)
-    "Creates a signing key by combining the consumer-secret and the token secret and percent encoding the result"
+    "Creates a signing key by combining the consumer-secret and the
+     token secret and percent encoding the result"
     (concat
      (url-encode-url
       consumer-secret)
@@ -240,7 +242,7 @@ Now before we can sign anything, and we *do* need to sign things, we need to cre
 #+END_SRC
 
 **** Step 3: Creating The Header
-Next up, we need to build the header, create a string to sign, sign that string and them add that signature to our header. Simple.
+Next up, we need to build the header, create a string to sign, sign that string, and then add that signature to our header. Simple.
 #+NAME: twitter-oauth-headers
 #+BEGIN_SRC emacs-lisp :var nonce=nonce consumer-key=twitter-consumer-key access-token=twitter-access-token oauth-time=oauth-time body=hello-world signing-key=signing-key
   (let*
@@ -286,7 +288,7 @@ We need to encode our body as a post parameter string.
          ""))
 #+END_SRC
 
-Finally, now that we've done all that work to formatting and signing things, we can finish it off by tweeting to the world how much we love Emacs.
+Finally, now that we've done all that work to format and sign things, we can finish it off by tweeting to the world how much we love Emacs.
 #+BEGIN_SRC restclient :var twitter-headers=twitter-restclient-headers twitter-body=twitter-post-body
   #
   :body := (concat twitter-post-body)
@@ -295,7 +297,7 @@ Finally, now that we've done all that work to formatting and signing things, we 
 #+END_SRC
 
 
-** To 11
+** Taking things to 11
 
 [[./images/to_11.gif]]
 
@@ -304,10 +306,10 @@ I think using ~org-mode~ and ~restclient~ to authenticate and post on Twitter is
 Why, of course we can! This is Emacs, we pretty much have to do something overly complicated.
 
 I'm a big fan of science and I want to share my enthusiasm with the world. So, we're going to use our newly learned skills to talk across several APIs. We're going to:
-1. To grab a plant name from trefle.io
-2. Find a picture of that plant, using Google Custom Search
-3. Make sure that the picture we have is of that plant, using Google vision
-4. Tag someone on Twitter and share the plant name and picture with them.
+1. Grab a plant name from [[https://www.trefle.io][Trefle]]
+2. Find a picture of that plant, using [[https://cse.google.com/cse/][Google Custom Search]]
+3. Make sure that the picture we have is of that plant, using [[https://cloud.google.com/vision/][Google Vision]]
+4. Tag someone on Twitter and share the plant name and picture with them
 
 *** More Helper Functions
 We need a function to sanitize the response we get from ~restclient~
@@ -360,7 +362,7 @@ Let's give our source block a name, ~#+NAME: trefle~, so we can easily reference
   security find-generic-password -gws trefle.io
 #+END_SRC
 
-To import a variable from earlier in the file you can use ~:var token=trefle~ where :var token, specifies that you what to insert a variable called token into the proceeding block and the contents of that variable are pulled from a block by the name of ~trefle~. Now we just need to build the HTTP headers we're going to use for our interaction with ~trefle~.
+To import a variable from earlier in the file you can use ~:var token=trefle~ where :var token specifies that you want to insert a variable called token into the proceeding block and the contents of that variable are pulled from a source code block named ~trefle~. Now we just need to build the HTTP headers we're going to use for our interaction with Trefle.
 #+NAME: trefle-headers
 #+BEGIN_SRC emacs-lisp :var token=trefle
   (concat
@@ -370,7 +372,7 @@ To import a variable from earlier in the file you can use ~:var token=trefle~ wh
   Authorization: Bearer " token)
 #+END_SRC
 
-As of the last time I looked, trefle.io has over 4000 pages of plants, so we want to get a random plant off of a random page. So to start, we'll generate a page number from 0 to 4000...
+As of the last time I looked, [[https://www.trefle.io][Trefle]] has over 4000 pages of plants, so we want to get a random plant off of a random page. So to start, we'll generate a page number from 0 to 4000...
 #+NAME: plants
 #+BEGIN_SRC restclient :var headers=trefle-headers  :results value drawer
   #
@@ -380,13 +382,13 @@ As of the last time I looked, trefle.io has over 4000 pages of plants, so we wan
   #
 #+END_SRC
 
-Before we can do anything with the output we need to clean it up, ~restclient~ likes to have all the headers for the response at the bottom of the buffer, so we need to filter those out of the response.
+Before we can do anything with the output we need to clean it up. Restclient likes to have all the headers for the response at the bottom of the buffer, so we need to filter those out of the response.
 #+NAME: sanitized-response
 #+BEGIN_SRC emacs-lisp :var response=plants
 (sanitize-restclient-response response)
 #+END_SRC
 
-Now we could use emacs-lisp, but everyone has NodeJS installed and NodeJS is pretty much built for parsing JSON, so it only makes sense to use that. We'll grab a random plant from the results and return its name.
+Now we could use emacs-lisp, but everyone has Node installed and Node is pretty much built for parsing JSON, so it only makes sense to use that. We'll grab a random plant from the results and return its name.
 #+NAME: plant-name
 #+BEGIN_SRC js :var plants=sanitized-response :results value drawer
   let index = Math.floor(Math.random() * 30);
@@ -394,7 +396,7 @@ Now we could use emacs-lisp, but everyone has NodeJS installed and NodeJS is pre
 #+END_SRC
 
 *** Imagine
-I need to get my Google API key, for this I've been lazy and have just been storing it in my environment.
+I need to get my Google API key. For this, I've been lazy and have just been storing it in my environment.
 #+NAME: google-api-key
 #+BEGIN_SRC bash
   echo $GOOGLE_API_KEY
@@ -406,20 +408,19 @@ We've got a plant name, now we need an image of the plant.
   GET https://content.googleapis.com/customsearch/v1?cx=009341007550343915479%3Afg_hsgzltxw&q=:plant-name&searchType=image&key=:api-key
 #+END_SRC
 
-Much like our search for a plant name, we need to clean up the response from Google API so it's easily parseable as JSON.
+Much like our search for a plant name, we need to clean up the response from Google API so it's easily parsable as JSON.
 #+NAME: flower-images
 #+BEGIN_SRC emacs-lisp :var google-images=google-images
   (sanitize-restclient-response google-images)
 #+END_SRC
 
-We have a nice list of plant images, let's play Google roulette and use the first image from the search.
+We have a nice list of plant images. Let's play Google roulette and use the first image from the search.
 #+NAME: plant-image
 #+BEGIN_SRC js :var plant_images=flower-images :results value drawer
   return "" + JSON.parse(plant_images).items[0].link
 #+END_SRC
 
-*** What shall we learn today?
-[[./images/PreciousHoarseFieldspaniel.gif]]
+*** What shall we (machine) learn today?
 
 When we're running our code we don't have time to make sure all it does what it is supposed to do and everyone knows you can't trust Google. Instead, we'll use machine learning provided by the fabulous Google Vision API to validate our choice. We'll ask Google for the top 3 labels for an image and see if those labels contain the words "Flower", "Plant", or "Tree".
 #+NAME: plant-ml-results
@@ -445,7 +446,7 @@ When we're running our code we don't have time to make sure all it does what it 
   }
 #+END_SRC
 
-[[./images/clean_things.png]]
+Next clean the response.
 #+NAME: sanitized-ml-results
 #+BEGIN_SRC emacs-lisp :var response=plant-ml-results
 (sanitize-restclient-response response)
@@ -482,14 +483,13 @@ If you're curious what talking to the Google Vision API looks like, here it is.
 }
 #+end_example
 
-Let's check to see if the first three descriptors come back as plant, tree, or a flower. If it doesn't match these descriptors, then we rerun this code block. Warning: this could trap us into an infinite loop.
+Let's check to see if the first three descriptors come back as plant, tree, or a flower. If it doesn't match these descriptors, then we rerun this code block. When we rerun ths code block ~image-is-plant-p~ this will have a cascading effect and call all previous code blocks. So, we'll keep querying Trefle and Google until we find a pciture that meets our criteria. Warning: this could trap us into an infinite loop.
 #+NAME: image-is-plant-p
 #+BEGIN_SRC emacs-lisp :var response=sanitized-ml-results
   (while (not (contains-description-p
                (parse-ml-response response)
                '("plant" "tree" "flower")))
       (org-sbe image-is-plant-p))
-  t
 #+END_SRC
 
 *** A rose by any other name
@@ -500,7 +500,7 @@ We need one last piece of information before we can demonstrate our love of plan
 #+END_SRC
 
 *** Content is king
-Now we need to build our body into something we can process later together...
+Now we need to [[https://www.youtube.com/watch?v=6BxAJNywkmg][build our body]] into something we can process later...
 #+NAME: twitter-plant-body
 #+BEGIN_SRC emacs-lisp :var plant_name=plant-name plant_image=plant-image twitter_handle=twitter-handle valid-image=image-is-plant-p
   (setq twitter-body
@@ -508,7 +508,7 @@ Now we need to build our body into something we can process later together...
     (cons "status" (concat "" twitter_handle " " plant_name " " (replace-regexp-in-string "'" "" plant_image)))))
 #+END_SRC
 
-*** Preparation, creating a new Twitter header.
+*** A real header scratcher: creating a new Twitter header
 We can use all of the source blocks we created back when we were professing our love for Emacs. However, we need to change a few references. In the source block below we need to change the reference from ~body=hello-world~ to ~body=twitter-plant-body~.
 #+NAME: twitter-oauth-headers-plants
 #+BEGIN_SRC emacs-lisp :var nonce=nonce consumer-key=twitter-consumer-key access-token=twitter-access-token oauth-time=oauth-time body=twitter-plant-body signing-key=signing-key
@@ -562,11 +562,11 @@ Voila! We've can post a cute plant...or tree...or flower...to Twitter!
 #+END_SRC
 
 ** In conclusive
-You don't need to use Emacs to enjoy the benefits of literate programming across 4 disparate APIs, to do that all you really need is bubblegum and determination. However, literate programming is a great paradigm to create and share your work for your coworkers or others to use and extend. I think Emacs and in particular, ~org-mode~, is great for literate programming because it's a lot like [[https://jupyter.org/][Jupyter Notebooks]], it supports a lot more languages and supports more than one language per notebook. Plus, ~org-mode~ works wonderfully with the two best [[http://spacemacs.org/][flavours]] of [[https://github.com/hlissner/doom-emacs][Vim]]!
+You don't need to use Emacs to enjoy the benefits of literate programming across 4 disparate APIs. To do that all you really need is bubblegum and determination. However, literate programming is a great paradigm to create and share your work for others to play with. I think Emacs and in particular, org-mode, is great for literate programming because it's a lot like [[https://jupyter.org/][Jupyter Notebooks]], it supports a lot more languages and supports more than one language per notebook. Plus, org-mode works wonderfully with the two best [[http://spacemacs.org/][flavours]] of [[https://github.com/hlissner/doom-emacs][Vim]]!
 
 * References
-1. https://developer.twitter.com/en/docs/basics/authentication/overview/application-only
-2. https://cloud.google.com/vision/docs/request
-3. https://developer.twitter.com/en/docs/tweets/post-and-engage/api-reference/post-statuses-update.html
-4. https://developers.google.com/custom-search/docs/overview
-5. http://lti.tools/oauth/
++ https://developer.twitter.com/en/docs/basics/authentication/overview/application-only
++ https://cloud.google.com/vision/docs/request
++ https://developer.twitter.com/en/docs/tweets/post-and-engage/api-reference/post-statuses-update.html
++ https://developers.google.com/custom-search/docs/overview
++ http://lti.tools/oauth/
