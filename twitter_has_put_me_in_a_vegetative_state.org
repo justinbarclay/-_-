@@ -26,7 +26,7 @@
 TL;DR Other HTTP Clients aren’t that great. Here we use Emacs and restclient, with public APIs, to identify plants and share on Twitter. Emacs and restclient offer a great user experience and workflow when documenting and exploring APIs.
 #+END_QUOTE
 
-Lately, I've spent a lot of time exploring web APIs. I've tried a couple of tools over the years: Postman back when it was a chrome extension, Curl, and HTTPie. They were all, ok — they got the job done — but they all ended up missing some feature or some UX. That's when I found [[https://github.com/pashky/restclient.el][restclient]], a package for Emacs with a simple DSL, and could convert the restclient request to an equivalent ~curl~ request.
+Lately, I've spent a lot of time exploring web APIs. I've tried a couple of tools over the years: Postman back when it was a chrome extension, Curl, and HTTPie. They were all, ok — they got the job done — but they all ended up missing some feature or some UX. That's when I found [[https://github.com/pashky/restclient.el][restclient]], a package for Emacs with a simple DSL, and could convert the restclient request to an equivalent curl request.
 
 Let's take a look at an example of what restclient looks like when authenticating with twitter. Here we will post our base64 encoded secrets to get a bearer token:
 #+BEGIN_SRC restclient
@@ -135,8 +135,9 @@ First, we need to define a few functions that we are going to use during OAuth a
          "&")))))
 
   (defun build-twitter-header-string (header oauth-headers)
-    "Takes in a list of cons cells that represent HTTP headers, as well as the information needed to define
-     the OAUTH response for a Twitter request, and build a restclient style header string"
+    "Takes in a list of cons cells that represent HTTP headers, as well as
+     the information needed to define the OAUTH response for a Twitter request,
+     and build a restclient style header string"
     (concat
      "<<\n"
      (mapconcat
@@ -314,9 +315,13 @@ I'm a big fan of science and I want to share my enthusiasm with the world. So, w
 *** More Helper Functions
 We need a function to sanitize the response we get from ~restclient~
 #+BEGIN_SRC emacs-lisp
-(defun sanitize-restclient-response (string)
- "Trim down a restclient response to JSON, removing the org source block and header information"
- (string-trim (replace-regexp-in-string "^#\\+BEGIN_SRC js\\|^#\\+END_SRC\\|^//[[:print:]]+" "" string)))
+  (defun sanitize-restclient-response (string)
+   "Trim down a restclient response to JSON, removing the org source block and
+    header information"
+   (string-trim (replace-regexp-in-string
+                 "^#\\+BEGIN_SRC js\\|^#\\+END_SRC\\|^//[[:print:]]+"
+                 ""
+                 string)))
 #+END_SRC
 
 Let's be able to execute an arbitrary source code block
@@ -333,27 +338,31 @@ Let's be able to execute an arbitrary source code block
 
 Here's a couple of functions we're going to use to help us parse a response from Google's API.
 #+BEGIN_SRC emacs-lisp
-  (defun parse-ml-response (responses)
-    "Extracts a Google AI response down to a list of label annotations"
-    (let* ((json-response (json-read-from-string responses))
-           (label-annotations  (cdr
-                               (assoc 'labelAnnotations
-                                      (elt
-                                       (cdr (assoc 'responses json-response))
-                                       0)))))
-      label-annotations))
+      (defun parse-ml-response (responses)
+        "Extracts a Google AI response down to a list of label annotations"
+        (let* ((json-response (json-read-from-string responses))
+               (label-annotations  (cdr
+                                   (assoc 'labelAnnotations
+                                          (elt
+                                           (cdr (assoc 'responses json-response))
+                                           0)))))
+          label-annotations))
 
-  (defun contains-description-p (annotations descriptions)
-    "Checks to see if any of the items in the sequence ANNOTATIONS has a description that matches one of the items in DESCRIPTIONS"
-    (let ((annotated-descriptions (mapcar (lambda (item) (cdr (assoc 'description item))) annotations)))
-      (reduce (lambda (predicate description)
-                (if predicate
-                    predicate
-                  (if (member (downcase description) descriptions)
-                      't
-                    nil)))
-              annotated-descriptions
-              :initial-value nil)))
+      (defun contains-description-p (annotations descriptions)
+        "Checks to see if any of the items in the sequence ANNOTATIONS has a
+         description that matches one of the items in DESCRIPTIONS"
+        (let ((annotated-descriptions (mapcar
+                                       (lambda (item)
+                                         (cdr (assoc 'description item)))
+                                       annotations)))
+          (reduce (lambda (predicate description)
+                    (if predicate
+                        predicate
+                      (if (member (downcase description) descriptions)
+                          't
+                        nil)))
+                  annotated-descriptions
+                  :initial-value nil)))
 #+END_SRC
 *** Harvesting a name
 Let's give our source block a name, ~#+NAME: trefle~, so we can easily reference it throughout the rest of our notebook. I am using my Mac's keychain to store and retrieve an access token I have stored for trefle.io.
@@ -483,7 +492,7 @@ If you're curious what talking to the Google Vision API looks like, here it is.
 }
 #+end_example
 
-Let's check to see if the first three descriptors come back as plant, tree, or a flower. If it doesn't match these descriptors, then we rerun this code block. When we rerun ths code block ~image-is-plant-p~ this will have a cascading effect and call all previous code blocks. So, we'll keep querying Trefle and Google until we find a pciture that meets our criteria. Warning: this could trap us into an infinite loop.
+Let's check to see if the first three descriptors come back as plant, tree, or a flower. If it doesn't match these descriptors, then we rerun them code block below. When we rerun ths code block ~image-is-plant-p~ this will have a cascading effect and call all previous code blocks. So, we'll keep querying Trefle and Google until we find a pciture that meets our criteria. Warning: this could trap us into an infinite loop.
 #+NAME: image-is-plant-p
 #+BEGIN_SRC emacs-lisp :var response=sanitized-ml-results
   (while (not (contains-description-p
@@ -512,23 +521,25 @@ Now we need to [[https://www.youtube.com/watch?v=6BxAJNywkmg][build our body]] i
 We can use all of the source blocks we created back when we were professing our love for Emacs. However, we need to change a few references. In the source block below we need to change the reference from ~body=hello-world~ to ~body=twitter-plant-body~.
 #+NAME: twitter-oauth-headers-plants
 #+BEGIN_SRC emacs-lisp :var nonce=nonce consumer-key=twitter-consumer-key access-token=twitter-access-token oauth-time=oauth-time body=twitter-plant-body signing-key=signing-key
-  (let*
-      ((twitter-oauth-headers
-        (list
-         (cons "oauth_consumer_key" consumer-key)
-         (cons "oauth_nonce" nonce)
-         (cons "oauth_signature_method" "HMAC-SHA1")
-         (cons "oauth_timestamp" oauth-time)
-         (cons "oauth_token" access-token)
-         (cons "oauth_version" "1.0")))
-       (signature-string
-        (twitter-signature-string "POST"
-                                  "https://api.twitter.com/1.1/statuses/update.json"
-                                  (append twitter-oauth-headers twitter-body)))
-       (signature
-        (org-sbe createSignature (signature_string (eval signature-string)) (key (eval signing-key)))))
-    (append twitter-oauth-headers (list (cons "oauth_signature"
-                                              (url-hexify-string signature)))))
+    (let*
+        ((twitter-oauth-headers
+          (list
+           (cons "oauth_consumer_key" consumer-key)
+           (cons "oauth_nonce" nonce)
+           (cons "oauth_signature_method" "HMAC-SHA1")
+           (cons "oauth_timestamp" oauth-time)
+           (cons "oauth_token" access-token)
+           (cons "oauth_version" "1.0")))
+         (signature-string
+          (twitter-signature-string "POST"
+                                    "https://api.twitter.com/1.1/statuses/update.json"
+                                    (append twitter-oauth-headers twitter-body)))
+         (signature
+          (org-sbe createSignature
+                   (signature_string (eval signature-string))
+                   (key (eval signing-key)))))
+      (append twitter-oauth-headers (list (cons "oauth_signature"
+                                                (url-hexify-string signature)))))
 #+END_SRC
 *** Repeat: Encoding Data and Posting To Twitter
 Similiarly, we need to reassign ~twitter-oauth-headers=twitter-oauth-headers~ to ~twitter-oauth-headers=twitter-oauth-headers-plants~
