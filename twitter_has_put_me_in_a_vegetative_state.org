@@ -1,25 +1,21 @@
-* Literate Programming with org-mode and restclient                   :TOC_4:
-  - [[#rest-call-me-maybe][Rest Call Me Maybe]]
-      - [[#create-a-link-to-the-raw-file-and-create-a-gist-for-outlining-the-requirements-for-this-project][create a link to the raw file and create a gist for outlining the requirements for this project]]
-  - [[#twitter][Twitter]]
-    - [[#helper-functions][Helper functions]]
-    - [[#shhh-its-a-secret][Shhh It's a Secret]]
-    - [[#lets-auth-it][Let's Auth it]]
-      - [[#step-1-generate-a-body][Step 1: Generate a body]]
-      - [[#step-2-generating-some-header-data][Step 2: Generating some header data]]
-      - [[#step-3-creating-the-header][Step 3: Creating The Header]]
-      - [[#step-4-encoding-data-and-posting-to-twitter][Step 4: Encoding Data and Posting To Twitter]]
-  - [[#to-11][To 11]]
-    - [[#more-helper-functions][More Helper Functions]]
-    - [[#harvesting-a-name][Harvesting a name]]
-    - [[#imagine][Imagine]]
-    - [[#what-shall-we-learn-today][What shall we learn today?]]
-    - [[#a-rose-by-any-other-name][A rose by any other name]]
-    - [[#content-is-king][Content is king]]
-    - [[#preparation-creating-a-new-twitter-header][Preparation, creating a new twitter header.]]
-    - [[#repeat-encoding-data-and-posting-to-twitter][Repeat: Encoding Data and Posting To Twitter]]
-- [[#references][References]]
+#+hugo_base_dir: ~/dev/blog
+#+hugo_section: ./post
 
+#+hugo_weight: 2001
+#+hugo_auto_set_lastmod: t
+
+#+title: Literate Programming with org-mode and restclient
+
+#+date: <2019-02-02 Sat>
+#+author: Justin Barclay
+
+#+hugo_tags: emacs node ruby restclient twitter google
+#+hugo_categories: emacs
+#+hugo_menu: :menu "main" :weight 2001
+
+#+hugo_draft: true
+
+* Literate Programming with org-mode and restclient                   :TOC_4:
 ** Rest Call Me Maybe
 
 #+BEGIN_QUOTE
@@ -28,7 +24,7 @@ TL;DR Other HTTP Clients aren’t that great. Here we use Emacs and restclient, 
 
 Lately, I've spent a lot of time exploring web APIs. I've tried a couple of tools over the years: Postman back when it was a chrome extension, Curl, and HTTPie. They were all, ok — they got the job done — but they all ended up missing some feature or some UX. That's when I found [[https://github.com/pashky/restclient.el][restclient]], a package for Emacs with a simple DSL, and could convert the restclient request to an equivalent curl request.
 
-Let's take a look at an example of what restclient looks like when authenticating with twitter. Here we will post our base64 encoded secrets to get a bearer token:
+Let's take a look at an example of what restclient looks like when authenticating with Twitter. Here we will post our base64 encoded secrets to get a bearer token:
 #+BEGIN_SRC restclient
   POST https://api.twitter.com/oauth2/token
   Authorization: Basic QmRUTklkSEI5WWZHbVhwSkZ6NTZManpUNjpBMk1rOHJjaVdEWFdva3FCN1pmemZFdEk3WjRNd1lpM3JFSjhzN1JoVm9xMXhZY2pMbQ==
@@ -37,7 +33,7 @@ Let's take a look at an example of what restclient looks like when authenticatin
   grant_type=client_credentials
 #+END_SRC
 
-Then once, you've POSTed the request a new buffer opens up with the response.
+Then, once you've POSTed the request a new buffer opens up with the response.
 #+NAME restclient response
 #+begin_example
 {
@@ -73,7 +69,7 @@ Using [[https://www.youtube.com/watch?v=fTvQTMOGJaw][restclient]] as my primary 
 
 However, I eventually ran into three complications when using it:
   1. My restclient files would become a mess and navigating to find a specific endpoint or a set of endpoints was a pain.
-  2. ~I am lazy and dealing with authenticated APIs was a pain.~
+  2. I am lazy and dealing with authenticated APIs was a pain.
      - I'd need to enter my credentials each time I needed to get a new token
      - Once I authenticated, I would have to copy and paste that token from the response buffer into a variable, to use throughout the restclient file.
   3. For exploring APIs I like to take notes, record responses, and record the input.
@@ -200,7 +196,7 @@ Before we can do all the fun authentication bits that is OAuth, we need to have 
 #+END_SRC
 
 **** Step 2: Generating some header data
-Ok, now that we have our Twitter status, we need to auto generate a few more pieces of information; a nonce, a timestamp, and the signature.
+Ok, now that we have our Twitter status, we need to autogenerate a few more pieces of information; a nonce, a timestamp, and the signature.
 
 Emacs doesn't really have a built in crypto library, but do you know who does? Ruby! It is a fun language with a pretty full featured standard library; let's use it to generate our nonce.
 #+NAME: nonce
@@ -457,7 +453,7 @@ When we're running our code we don't have time to make sure all it does what it 
   }
 #+END_SRC
 
-Next clean the response.
+Next, clean the response.
 #+NAME: sanitized-ml-results
 #+BEGIN_SRC emacs-lisp :var response=plant-ml-results
 (sanitize-restclient-response response)
