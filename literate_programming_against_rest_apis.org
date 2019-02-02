@@ -1,10 +1,10 @@
 #+hugo_base_dir: ~/dev/blog
-#+hugo_section: ./post
+#+hugo_section: ./posts
 
 #+hugo_weight: 2001
 #+hugo_auto_set_lastmod: t
 
-#+title: Literate Programming with org-mode and restclient
+#+title: Literate Programming against REST APIs
 
 #+date: <2019-02-02 Sat>
 #+author: Justin Barclay
@@ -13,10 +13,8 @@
 #+hugo_categories: emacs
 #+hugo_menu: :menu "main" :weight 2001
 
-#+hugo_draft: true
-
-* Literate Programming with org-mode and restclient                   :TOC_4:
-** Rest Call Me Maybe
+#+hugo_draft: false
+* Rest Call Me Maybe
 
 #+BEGIN_QUOTE
 TL;DR Other HTTP Clients aren’t that great. Here we use Emacs and restclient, with public APIs, to identify plants and share on Twitter. Emacs and restclient offer a great user experience and workflow when documenting and exploring APIs.
@@ -84,7 +82,7 @@ If you've never heard of org-mode, here's three key things to know before going 
 #+CAPTION: Tweeting using literate programming and Emacs
 [[./images/org-mode-low-quality.gif]]
 
-*** Follow along at home!
+** Follow along at home!
 If you would like run arbitrary elisp at home, you can download the following file in Emacs or your favourite [[http://spacemacs.org/][flavours]] of [[https://github.com/hlissner/doom-emacs][Vim]].
 #+BEGIN_SRC elisp
   (browse-url-emacs "https://raw.githubusercontent.com/justinbarclay/-_-/master/twitter_has_put_me_in_a_vegetative_state.org")
@@ -92,9 +90,9 @@ If you would like run arbitrary elisp at home, you can download the following fi
 
 Of course, you need to go out and download restclient and ob-restclient and thats it, thats all the Emacs packages you need. Oh... also NodeJS and Ruby, don't @ me. Ok @ me, I'm lonely.
 
-** Twitter
+* Twitter
 A good way to demonstrate the power of restclient and org-mode would be to post some tweets from Emacs. First, we need to be able to authenticate with Twitter. So, let’s see how we can use org-mode and restclient to authenticate with an OAuth endpoint.
-*** Helper functions
+** Helper functions
 
 First, we need to define a few functions that we are going to use during OAuth authentication. I could use a library or package for this, but when I am writing I become somewhat of a masochist.
 #+BEGIN_SRC emacs-lisp
@@ -164,7 +162,7 @@ First, we need to define a few functions that we are going to use during OAuth a
      "\n#"))
 #+END_SRC
 
-*** Shhh It's a Secret
+** Shhh It's a Secret
 
 I don't need to store the authentication information in files, and I am to lazy to remember or copy and paste them! I can just use the information that is stored in my environment.
 #+NAME: twitter-consumer-key
@@ -186,8 +184,8 @@ echo $TWITTER_ACCESS_TOKEN
 #+BEGIN_SRC bash
 echo $TWITTER_ACCESS_SECRET
 #+END_SRC
-*** Let's Auth it
-**** Step 1: Generate a body
+** Let's Auth it
+*** Step 1: Generate a body
 
 Before we can do all the fun authentication bits that is OAuth, we need to have some content. So, I feel like I need to be on brand for an Emacs user and let everyone know I am using Emacs for something that isn't editing text.
 #+NAME: hello-world
@@ -195,7 +193,7 @@ Before we can do all the fun authentication bits that is OAuth, we need to have 
   (setq twitter-body (list (cons "status" "Hello world! I'm tweeting from Emacs")))
 #+END_SRC
 
-**** Step 2: Generating some header data
+*** Step 2: Generating some header data
 Ok, now that we have our Twitter status, we need to autogenerate a few more pieces of information; a nonce, a timestamp, and the signature.
 
 Emacs doesn't really have a built in crypto library, but do you know who does? Ruby! It is a fun language with a pretty full featured standard library; let's use it to generate our nonce.
@@ -238,7 +236,7 @@ Now before we can sign anything, and we *do* need to sign things, we need to cre
   (twitter-signing-key consumer-secret token-secret)
 #+END_SRC
 
-**** Step 3: Creating The Header
+*** Step 3: Creating The Header
 Next up, we need to build the header, create a string to sign, sign that string, and then add that signature to our header. Simple.
 #+NAME: twitter-oauth-headers
 #+BEGIN_SRC emacs-lisp :var nonce=nonce consumer-key=twitter-consumer-key access-token=twitter-access-token oauth-time=oauth-time body=hello-world signing-key=signing-key
@@ -263,7 +261,7 @@ Next up, we need to build the header, create a string to sign, sign that string,
                                                 (url-hexify-string signature)))))
 #+END_SRC
 
-**** Step 4: Encoding Data and Posting To Twitter
+*** Step 4: Encoding Data and Posting To Twitter
 
 Up next, our headers need to be in a string format that ~restclient~ knows how to read.
 #+NAME: twitter-restclient-headers
@@ -296,7 +294,7 @@ Finally, now that we've done all that work to format and sign things, we can fin
 #+END_SRC
 
 
-** Taking things to 11
+* Taking things to 11
 
 [[./images/to_11.gif]]
 
@@ -310,7 +308,7 @@ I'm a big fan of science and I want to share my enthusiasm with the world. So, w
 3. Make sure that the picture we have is of that plant, using [[https://cloud.google.com/vision/][Google Vision]]
 4. Tag someone on Twitter and share the plant name and picture with them
 
-*** More Helper Functions
+** More Helper Functions
 We need a function to sanitize the response we get from restclient
 #+BEGIN_SRC emacs-lisp
   (defun sanitize-restclient-response (string)
@@ -362,7 +360,7 @@ Here's a couple of functions we're going to use to help us parse a response from
                   annotated-descriptions
                   :initial-value nil)))
 #+END_SRC
-*** Harvesting a name
+** Harvesting a name
 Let's give our source block a name, ~#+NAME: trefle~, so we can easily reference it throughout the rest of our notebook. I am using my Mac's keychain to store and retrieve an access token I have stored for trefle.io.
 #+NAME: trefle
 #+BEGIN_SRC bash :results output
@@ -402,7 +400,7 @@ Now we could use emacs-lisp, but everyone has Node installed and Node is pretty 
   return JSON.parse(plants)[index].scientific_name;
 #+END_SRC
 
-*** Imagine
+** Imagine
 I need to get my Google API key. For this, I've been lazy and have just been storing it in my environment.
 #+NAME: google-api-key
 #+BEGIN_SRC bash
@@ -427,7 +425,7 @@ We have a nice list of plant images. Let's play Google roulette and use the firs
   return "" + JSON.parse(plant_images).items[0].link
 #+END_SRC
 
-*** What shall we (machine) learn today?
+** What shall we (machine) learn today?
 
 When we're running our code we don't have time to make sure all it does what it is supposed to do and everyone knows you can't trust Google. Instead, we'll use machine learning provided by the fabulous Google Vision API to validate our choice. We'll ask Google for the top 3 labels for an image and see if those labels contain the words "Flower", "Plant", or "Tree".
 #+NAME: plant-ml-results
@@ -499,14 +497,14 @@ Let's check to see if the first three descriptors come back as plant, tree, or a
       (org-sbe image-is-plant-p))
 #+END_SRC
 
-*** A rose by any other name
+** A rose by any other name
 We need one last piece of information before we can demonstrate our love of plants to the world: someone to tweet at. Let's ask ourselves for some input.
 #+NAME: twitter-handle
 #+BEGIN_SRC emacs-lisp
 (read-string "What is the twitter handle of someone you want to tweet? ")
 #+END_SRC
 
-*** Content is king
+** Content is king
 Now we need to [[https://www.youtube.com/watch?v=6BxAJNywkmg][build our body]] into something we can process later...
 #+NAME: twitter-plant-body
 #+BEGIN_SRC emacs-lisp :var plant_name=plant-name plant_image=plant-image twitter_handle=twitter-handle valid-image=image-is-plant-p
@@ -515,7 +513,7 @@ Now we need to [[https://www.youtube.com/watch?v=6BxAJNywkmg][build our body]] i
     (cons "status" (concat "" twitter_handle " " plant_name " " (replace-regexp-in-string "'" "" plant_image)))))
 #+END_SRC
 
-*** A real header scratcher: creating a new Twitter header
+** A real header scratcher: creating a new Twitter header
 We can use all of the source blocks we created back when we were professing our love for Emacs. However, we need to change a few references. In the source block below we need to change the reference from ~body=hello-world~ to ~body=twitter-plant-body~.
 #+NAME: twitter-oauth-headers-plants
 #+BEGIN_SRC emacs-lisp :var nonce=nonce consumer-key=twitter-consumer-key access-token=twitter-access-token oauth-time=oauth-time body=twitter-plant-body signing-key=signing-key
@@ -539,7 +537,7 @@ We can use all of the source blocks we created back when we were professing our 
       (append twitter-oauth-headers (list (cons "oauth_signature"
                                                 (url-hexify-string signature)))))
 #+END_SRC
-*** Repeat: Encoding Data and Posting To Twitter
+** Repeat: Encoding Data and Posting To Twitter
 Similiarly, we need to reassign ~twitter-oauth-headers=twitter-oauth-headers~ to ~twitter-oauth-headers=twitter-oauth-headers-plants~
 #+NAME: twitter-restclient-headers-plants
 #+BEGIN_SRC emacs-lisp :var header=twitter-headers twitter-oauth-headers=twitter-oauth-headers-plants
