@@ -1,8 +1,20 @@
-* Hacking Emacs to Send Text to Slack: The Quickening
+#+hugo_base_dir: ~/dev/blog
+#+hugo_section: ./posts
 
-When last we left our heroes they were in the deep woods of Emacs, hacking at Slack goblins. Choose how to proceed...
+#+hugo_weight: 2001
+#+hugo_auto_set_lastmod: t
 
-** Relearning from past mistakes
+#+title: Learning to Hack Emacs by improving emacs-slack.el
+
+#+date: <2018-03-24 Sat>
+#+author: Justin Barclay
+
+#+hugo_tags: emacs slack
+#+hugo_categories: emacs
+
+#+hugo_draft: false
+
+* Where we left off
 
 In my previous [[https://medium.com/@justincbarclay/my-descent-into-madness-hacking-emacs-to-send-text-to-slack-bc6cf3780129][post,]] I figured out how to send any selected region in Emacs to Slack, wrapped in a markdown style code block (```).
 
@@ -33,8 +45,9 @@ Unfortunately, that isn't enough for me! I don't always want to demarcate text a
 #+END_SRC
 
 Or sometimes I want to have text don some shiny new quotes!
- * NEEDED IMAGE *
-/Here we see some text being dressed in the freshest quotes of the season/
+
+#+CAPTION: Here we see some text being dressed in the freshest quotes of the season
+[[./images/garments.png]]
 
 #+BEGIN_SRC emacs-lisp
   (defun jb/send-region-to-slack-quotes ()
@@ -52,11 +65,11 @@ Or sometimes I want to have text don some shiny new quotes!
                                    team)))
 #+END_SRC
 
-[[https://cdn-images-1.medium.com/max/3358/1*hgjqkYbn4jWXrxVyI7sL3Q.gif]]
+[[./images/slack-quote-fail.gif]]
 
 Sadly,  my simple solutions doesn't work. In [[https://daringfireball.net/projects/markdown/syntax#blockquote][Markdown]] you have to put ">" at the beginning of each line you want to specify as a quote.
 
-** Houston We Have a Problem
+* Houston We Have a Problem
 
 I've run into a problem, a big problem: I don't know how to iterate through text in a buffer. Sure I can copy it --- copying is easy --- but editing text while not also editing the buffer is tricky.
 
@@ -91,8 +104,6 @@ If I step this up a notch and apply it to a region, I get an error letting me kn
 #+BEGIN_QUOTE
   Wrong type argument: sequencep, 40
 #+END_QUOTE
-
-** Textual Oddities
 
 As a beginner in elisp, I find interactive and programmatic text processing to be an oddity. I have built up an intuition for string manipulation in other environments. I would expect, text to be either a single string or an array of strings. However, that doesn't map well to the way Emacs operates on text in buffers.
 
@@ -130,9 +141,7 @@ Voila, we have a function that operates on a region by adding a quote marker to 
       "\n")))
 #+END_SRC
 
-** Houston, We Still Have a Problem
-
-I have a function that works, but it's hacky --- way too hacky for me. I feel that text manipulation, /especially/ in a text editor, has to be easier than introducing the concept of a line, editing some text, and then removing the concept of the line. I believe that Emacs --- as a text editor --- has built methods for this and I have yet to discover them.
+Now I have a function that works, but it's hacky --- way too hacky for me. I feel that text manipulation, /especially/ in a text editor, has to be easier than introducing the concept of a line, editing some text, and then removing the concept of the line. I believe that Emacs --- as a text editor --- has built methods for this and I have yet to discover them.
 
 Unfortunately, I find the [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Current-Buffer.html][documentation ]][[https://www.gnu.org/software/emacs/manual/html_node/elisp/Excursions.html#Excursions][in ]][[https://www.gnu.org/software/emacs/manual/html_node/elisp/Text-Lines.html#Text-Lines][Emacs]] is not really geared toward building up a mental framework for programmatically manipulating text. I had to do a [[http://ergoemacs.org/emacs/elisp_process_lines.html][lot]] of [[https://emacs.stackexchange.com/a/2193][googling]] to get pointed in the right direction.
 
@@ -181,8 +190,6 @@ This looks a lot more like idiomatic Emacs! To finish off this leg of my journey
                                    team)))
 #+END_SRC
 
-** I Have My Towel
-
 #+BEGIN_QUOTE
   In the beginning, the Universe was created. This has made a lot of people very angry and been widely regarded as a bad move.
 
@@ -190,8 +197,6 @@ This looks a lot more like idiomatic Emacs! To finish off this leg of my journey
 #+END_QUOTE
 
 I'm not happy with the code that I've written so far. I mean, yeah it works, but it's ugly and repetitive. It's all very wet-behind-the-ears code --- I think with a bit of forethought and a big enough towel, I can dry it up.
-
-** Like a Desert
 
 Instead of having to call a different function for each decoration that I want to apply to my selected region, I should be able to delegate this work to one function and let the user decide what decoration they want. This is the perfect time to take advantage of [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Minibuffer-Completion.html][Emacs' completion framework]].
 
@@ -218,9 +223,9 @@ I've decided to take this a step further. I'm going to use an [[https://www.gnu.
           (message (funcall (cdr (assoc decoration decorators)) "Oh yeah")))))
 #+END_SRC
 
-*** Like a Dessert
+* Solution
 
-I've scoured the [[https://www.youtube.com/watch?v=eCh1WoNShEY][forbidden desert]] and found all the necessary pieces to build my simple functions, and now I get to fly out of here --- wait wrong game --- and now I get to make sharing even easier in Emacs.
+There we go---after digging through source code and reading through alot of Emacs documentation---I finally have a way to easily share snippets of code with friends, family, and cowokers. My present to you dear reader, for following me along on me jouney I give you my lifes work:
 
 #+BEGIN_SRC emacs-lisp
   (defun jb/slack-quote-region ()
@@ -255,11 +260,12 @@ I've scoured the [[https://www.youtube.com/watch?v=eCh1WoNShEY][forbidden desert
                                    (oref room id)
                                    team)))
 #+END_SRC
-  * NEED IMAGE *
-There --- nothing is more beautiful than code working as intended. Well, maybe my children? No, you're right, code is definitely more beautiful than my children.
+
+[[./images/perfet-opt.gif]]
+Nothing is more beautiful than code working as intended. Well, maybe my children? No, you're right, code is definitely more beautiful than my children.
 
 I want to thank [[http://twitter.com/spiralganglion][@spiralganglion]] for being a tremendous friend and editor.
 
-** Footnotes
+* Footnotes
 
 [fn:1] I think it's important to note that all operations happened based around the [[https://www.gnu.org/software/emacs/manual/html_node/eintr/Point-and-mark.html][point]] and that the point follows along with the end of the text being inserted. So, when I add in text that is 5 characters long at the beginning of a line, the point's position moves from 0 to 4. This is why at the beginning of each loop we move point to the beginning of the line.
