@@ -1,5 +1,20 @@
-* Hacking Emacs to send text to Slack
+#+hugo_base_dir: ~/dev/blog
+#+hugo_section: ./posts
 
+#+hugo_weight: 2001
+#+hugo_auto_set_lastmod: t
+
+#+title: Hacking Emacs to send text to Slack
+
+#+date: <2018-03-24 Sat>
+#+author: Justin Barclay
+
+#+hugo_tags: emacs slack
+#+hugo_categories: emacs
+
+#+hugo_draft: false
+
+* Introduction
 I want to get Emacs to send snippets of text from any buffer to Slack. Luckily, there is a Slack client for Emacs called [[https://github.com/yuya373/emacs-slack][emacs-slack]]. So, most of the hard work is done for me --- I have an interface to Slack in Emacs that allows me to send and read messages in any channel, room, or direct message. Unfortunately, I am now at an uncanny valley. I think emacs-slack does a lot of things right, but I don't think it makes sharing as easy as it should be.
 
 ** Why?
@@ -15,6 +30,8 @@ Why do I use Slack inside of Emacs? I like my Slack like I like my Emacs: brittl
 Oh, well, because I am a developer and I like to share things, and I am lazy --- too lazy to copy and paste every time I want to share an idea or have a question about a line of code. So instead of copying and pasting, I plan on spending way too long reading someone else's code, figuring out how to make sharing code with my team easier.
 
 You, uh, don't wanna go for a ride do you?
+
+[[./images/carpet-ride.png]]
 
 ** TL;DR
 
@@ -33,7 +50,7 @@ Install [[https://github.com/yuya373/emacs-slack][emacs-slack]] and paste the co
                                    team)))
 #+END_SRC
 
-** Let's play!
+* Let's play!
 
 If you wish to follow along, you will need to install and set up [[https://github.com/yuya373/emacs-slack][emacs-slack.]]
 
@@ -53,19 +70,15 @@ If you don't want to do any of this, you could give up on the good life and use 
 
 To set up emacs-slack, just follow the helpful steps found on the [[https://github.com/yuya373/emacs-slack#how-to-get-token-the-harder-yet-officially-sanctioned-way][GitHub]] page.
 
-** Play
-
 If you've never heard of emacs-slack before, this will probably be enough for you. You have emacs-slack setup and running. Play with it. Live it. Love it. Forget about this post.
 
-** Still Here? Let's Dive In
+* Still Here? Let's Dive In
 
-Enough about you! It's Saturday night, I have no date, a two-litre bottle of Shasta, and my all-Rush mixtape --- let's rock.
-
-Now, all I need to do is figure out which functions in emacs-slack are responsible for sending messages, how to hook into those functions, and how I can programmatically access text in Emacs. Simple? Simple.
+All I need to do is figure out which functions in emacs-slack are responsible for sending messages, how to hook into those functions, and how I can programmatically access text in Emacs. Simple? Simple.
 
 ** slack.el
 
-My first steps will be to open up some of emacs-slack's files and see what I can divine. [[https://github.com/yuya373/emacs-slack/blob/master/slack.el][slack.el]] seems like a good place to start. Let's see, there are a couple of [[https://www.gnu.org/software/emacs/manual/html_node/eintr/defcustom.html][defcustoms]], some defuns, and cl-defuns¹... but nothing that looks like it has to do with sending messages, which is ultimately what I want to do.
+My first steps will be to open up some of emacs-slack's files and see what I can divine. [[https://github.com/yuya373/emacs-slack/blob/master/slack.el][slack.el]] seems like a good place to start. Let's see, there are a couple of [[https://www.gnu.org/software/emacs/manual/html_node/eintr/defcustom.html][defcustoms]], some defuns, and cl-defuns[fn:1]... but nothing that looks like it has to do with sending messages, which is ultimately what I want to do.
 
 Time to move on...
 
@@ -73,11 +86,9 @@ Time to move on...
 
 I want to send a message, maybe [[https://github.com/yuya373/emacs-slack/blob/master/slack-message.el][slack-message.el]] is a better place to start.
 
-Ok... wait, what? defclass? defmethod? Since when was Emacs Lisp object oriented²?
+Ok... wait, what? defclass? defmethod? Since when was Emacs Lisp object oriented[fn:2]?
 
 So, it looks like Message is an object with a lot of methods. Helpful, but doesn't get me anything yet.
-
-** I Give Up
 
 I've read through two files, I've learned some things about the structure of this package, but there are 50 .el files. If I keep looking through all of these files, it's going to be a lot of work! Maybe I can take a different approach.
 
@@ -241,13 +252,12 @@ My first test was to see if I could quickly modify this function to get a protot
 
 Now to test it!
 
-[[./images/HelloWorld.mp4][Example of the above function working]]
-
-It works beautifully! Now to uncork that bottle of Shasta I've been saving.
+#+CAPTION: Example of the above function jb/say-hello-to-slack
+[[./images/HelloWorld.mp4]]
 
 ** Buffers, Regions, And Everything Between
 
-Now the last problem I need to solve: I need to figure out how to copy a region of text. I'm not sure how to do that, but I do know of a great resource for learning elisp, Emacs' own [[https://www.gnu.org/software/emacs/manual/html_node/elisp/][Elisp Manual]][[#footnotes][⁴]]. The key parts that we need to be aware of from this manual are [[https://www.gnu.org/software/emacs/manual/html_node/elisp/The-Region.html#The-Region][Regions]] and [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Buffer-Contents.html#Buffer-Contents][Buffer Contents.]]
+Now the last problem I need to solve: I need to figure out how to copy a region of text. I'm not sure how to do that, but I do know of a great resource for learning elisp, Emacs' own [[https://www.gnu.org/software/emacs/manual/html_node/elisp/][Elisp Manual]][fn:4]. The key parts that we need to be aware of from this manual are [[https://www.gnu.org/software/emacs/manual/html_node/elisp/The-Region.html#The-Region][Regions]] and [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Buffer-Contents.html#Buffer-Contents][Buffer Contents.]]
 
 As an example of how I learned to programmatically access text in a region, I've outlined a simple function below that prints out the content of a selected region to the minibuffer.
 
@@ -272,7 +282,7 @@ This finally leads me to have all the tools to create a function where I can pos
                                    team)))
 #+END_SRC
 
-*Codifying My Message*
+*** Codifying My Message
 
 One last enhancement to my function that I want to make: I am almost always going to be sending some chunk of code to Slack, so I want to wrap it in three backticks so Slack will apply the proper markup to it.
 
@@ -291,14 +301,12 @@ One last enhancement to my function that I want to make: I am almost always goin
 
 1700 words to describe a 10 line function, I don't understand all the hate that Emacs gets.
 
-** Update
+** Footnotes
 
-Read my follow up [[https://medium.com/@justincbarclay/hacking-emacs-to-send-text-to-slack-the-quickening-1f4258b88db8][Hacking Emacs to Send Text to Slack: The Quickening,]] where I explore how to clean up the code and make it more generic.
+[fn:1] As I was reading through the slack code I found it interesting that Emacs' defun was different from a CL implementation of defun. Richard Stallman hated how you could use keys to destructure arguments in Common Lisp and chose to omit that feature in elisp. [[https://www.emacswiki.org/emacs/KeywordArguments]]
 
-[1] As I was reading through the slack code I found it interesting that Emacs' defun was different from a CL implementation of defun. Richard Stallman hated how you could use keys to destructure arguments in Common Lisp and chose to omit that feature in elisp. [[https://www.emacswiki.org/emacs/KeywordArguments]]
+[fn:2] Fun note, Emacs Lisp has had an object system, ”[[https://www.gnu.org/software/emacs/manual/html_node/eieio/][Enhanced Implementation of Emacs Interpreted Objects]]”, since at least 2007 and maybe earlier[fn:3].
 
-[2] Fun note, Emacs Lisp has had an object system, ”[[https://www.gnu.org/software/emacs/manual/html_node/eieio/][Enhanced Implementation of Emacs Interpreted Objects]]”, since at least 2007 and maybe earlier[[#footnotes][³]].
+[fn:3] EIEIO is actually inspired by [[https://en.wikipedia.org/wiki/Common_Lisp_Object_System][Common Lisp Object System]], doing this dive into Emacs-Slack is teaching me so much about Emacs and Common Lisp!
 
-[3] EIEIO is actually inspired by [[https://en.wikipedia.org/wiki/Common_Lisp_Object_System][Common Lisp Object System]], doing this dive into Emacs-Slack is teaching me so much about Emacs and Common Lisp!
-
-[4] This is a lie, I didn't know about this manual until I started writing this post. This would have saved me hours of very poor google-fu.
+[fn:4] This is a lie, I didn't know about this manual until I started writing this post. This would have saved me hours of very poor google-fu.
