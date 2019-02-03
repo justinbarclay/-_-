@@ -4,7 +4,7 @@
 #+hugo_weight: 2001
 #+hugo_auto_set_lastmod: t
 
-#+title: Learning to Hack Emacs by improving emacs-slack.el
+#+title: Learning to hack Emacs by improving emacs-slack.el
 
 #+date: <2018-03-24 Sat>
 #+author: Justin Barclay
