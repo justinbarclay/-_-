@@ -6,7 +6,7 @@
 
 #+title: Hacking Emacs to send text to Slack
 
-#+date: <2018-03-24 Sat>
+#+date: <2018-03-03 Sat>
 #+author: Justin Barclay
 
 #+hugo_tags: emacs slack
@@ -253,7 +253,7 @@ My first test was to see if I could quickly modify this function to get a protot
 Now to test it!
 
 #+CAPTION: Example of the above function jb/say-hello-to-slack
-[[./images/HelloWorld.mp4]]
+[[./images/hello-world.gif]]
 
 ** Buffers, Regions, And Everything Between
 
